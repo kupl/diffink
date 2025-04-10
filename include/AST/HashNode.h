@@ -22,7 +22,12 @@ private:
   std::string Text;
 
 public:
-  HashNode(HashNode *Parent, TSSymbol Type, const std::string &Text)
+  HashNode(HashNode *Parent, TSSymbol Type, std::string &Text)
+      : Height{0}, Parent{Parent}, Type{Type}, Text(Text) {
+    Parent->Children.push_back(this);
+  }
+
+  HashNode(HashNode *Parent, TSSymbol Type, std::string &&Text)
       : Height{0}, Parent{Parent}, Type{Type}, Text(Text) {
     Parent->Children.push_back(this);
   }

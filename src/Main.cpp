@@ -87,8 +87,11 @@ int main() {
   // NewStr = "int main () { class A { int x; };\n"
   //          "class C { int x; }; }";
 
-  OldStr = "foo(x);";
-  NewStr = "foo();";
+  OldStr = "vector<int> x = {1, 2, 3};\n"
+           "vector<int> y = {1, 2, 3};\n"
+           "vector<int> z = {1, 2, 3};";
+  NewStr = "vector<int> x = {1, 2, 3};\n"
+           "vector<int> z = {1, 2, 3};";
 
   auto Parser = ts_parser_new();
   ts_parser_set_language(Parser, tree_sitter_cpp());

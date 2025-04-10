@@ -1,13 +1,14 @@
 #ifndef PARSER_TEXTDIFF_H
 #define PARSER_TEXTDIFF_H
 
+#include "Parser/CodeFile.h"
 #include <optional>
-#include <string>
-#include <tree_sitter/api.h>
 #include <unordered_set>
-#include <vector>
 
 namespace diffink {
+
+std::vector<TSInputEdit> diffString(const std::string &OldStr,
+                                    const std::string &NewStr);
 
 std::vector<TSInputEdit> diffString(const std::string &OldStr,
                                     const std::string &NewStr);
