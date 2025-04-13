@@ -1,9 +1,12 @@
-#include "Parser/TextDiff.h"
+#include "AST/RawTree.h"
+#include "Parser/Index.h"
+#include <bitset>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <tree-sitter-cpp.h>
+#include <tree-sitter-python.h>
 #include <tree_sitter/api.h>
 
 // 재귀적으로 TSNode를 문자열로 변환하는 헬퍼 함수
@@ -79,7 +82,7 @@ int main() {
            "  int y = 5 + 6 + 7 + 8;\n"
            "  int z = 6 + 6 + 6 + 6;";
   NewStr = "  int x = 1 - 2 - 3 - 4;\n"
-           "  int z = 6 + 6 + 6 + 6;\n";
+           "  int z = 6 + 6 + 6 + 6;";
 
   // OldStr = "int main () { class A { int x; };\n"
   //          "class B { int x; };\n"
@@ -87,60 +90,40 @@ int main() {
   // NewStr = "int main () { class A { int x; };\n"
   //          "class C { int x; }; }";
 
-  OldStr = "vector<int> x = {1, 2, 3};\n"
-           "vector<int> y = {1, 2, 3};\n"
-           "vector<int> z = {1, 2, 3};";
-  NewStr = "vector<int> x = {1, 2, 3};\n"
-           "vector<int> z = {1, 2, 3};";
+  // OldStr = "vector<int> x = {1, 2, 3};\n"
+  //          "vector<int> z = {1, 2, 3};\n";
+  // NewStr = "vector<int> x = {1, 2, 3};\n"
+  //          "vector<int> y = {1, 2, 3};\n"
+  //          "vector<int> z = {1, 2, 3};\n";
 
-  auto Parser = ts_parser_new();
-  ts_parser_set_language(Parser, tree_sitter_cpp());
+  // OldStr = "if x:\n"
+  //          "    print(x)\n"
+  //          "else:\n"
+  //          "    print(y)\n"
+  //          "    print(z)\n";
+  // NewStr = "if x:\n"
+  //          "    print(x)\n"
+  //          "else:\n"
+  //          "    print(y)\n"
+  //          "print(z)\n";
 
-  auto OldTree =
-      ts_parser_parse_string(Parser, nullptr, OldStr.c_str(), OldStr.size());
+  // OldStr = "x = [1, 2, 3, 4]\n"
+  //          "z = [1, 2, 3, 4]\n";
+  // NewStr = "x = [1, 2, 3, 4]\n"
+  //          "y = [1, 2, 3, 4]\n"
+  //          "z = [1, 2, 3, 4]\n";
 
-  auto OldTreeCopy = ts_tree_copy(OldTree);
-  for (const auto &edit : diffink::diffString(OldStr, NewStr)) {
-    std::cout << "---------------------------------\n";
-    std::cout << "start_byte: " << edit.start_byte << ", ";
-    std::cout << "old_end_byte: " << edit.old_end_byte << ", ";
-    std::cout << "new_end_byte: " << edit.new_end_byte << "\n";
-    std::cout << "start_point: (" << edit.start_point.row << ", "
-              << edit.start_point.column << "), ";
-    std::cout << "old_end_point: (" << edit.old_end_point.row << ", "
-              << edit.old_end_point.column << "), ";
-    std::cout << "new_end_point: (" << edit.new_end_point.row << ", "
-              << edit.new_end_point.column << ")\n";
-    std::cout << "---------------------------------\n";
+  NewStr = "이것은 한국어 문장입니다";
 
-    ts_tree_edit(OldTreeCopy, &edit);
-  }
-
-  auto NewTree = ts_parser_parse_string(Parser, OldTreeCopy, NewStr.c_str(),
-                                        NewStr.size());
-
-  std::cout << "Old Tree:\n";
-  std::cout << treeToString(OldTree) << "\n";
-  std::cout << "New Tree:\n";
-  std::cout << treeToString(NewTree) << "\n";
-
-  uint32_t ChangedRangeSize;
-  auto ChangedRangeList =
-      ts_tree_get_changed_ranges(OldTreeCopy, NewTree, &ChangedRangeSize);
-  std::cout << "Changed Range Size: " << ChangedRangeSize << "\n";
-  for (uint32_t i = 0; i != ChangedRangeSize; ++i) {
-    auto range = ChangedRangeList[i];
-    std::cout << "---------------------------------\n";
-    std::cout << "start_byte: " << range.start_byte << ", ";
-    std::cout << "end_byte: " << range.end_byte << "\n";
-    std::cout << "start_point: (" << range.start_point.row << ", "
-              << range.start_point.column << "), ";
-    std::cout << "end_point: (" << range.end_point.row << ", "
-              << range.end_point.column << ")\n";
-
-    auto Node = ts_node_descendant_for_byte_range(
-        ts_tree_root_node(NewTree), range.start_byte, range.end_byte);
-    std::cout << ts_node_type(Node) << " (" << ts_node_start_byte(Node) << ", "
-              << ts_node_end_byte(Node) << ")\n";
+  auto OldCode = std::make_unique<diffink::SourceCode>();
+  OldCode->newContent("Old", OldStr);
+  auto NewCode = std::make_unique<diffink::SourceCode>();
+  NewCode->newContent("New", NewStr);
+  for (auto i = 0; i < NewCode->getContentSize(); ++i) {
+    // print char as 0bXXXXXXXX format
+    std::cout << std::bitset<8>(
+                     static_cast<unsigned char>(NewCode->getContent()[i]))
+              << " " << (*NewCode)[i].row << " " << (*NewCode)[i].column
+              << "\n";
   }
 }

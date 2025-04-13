@@ -1,7 +1,10 @@
 public class Main {
-  private void foo() {
+  public void foo() {
     boolean x = true;
-    if (x)
+    int k = 0;
+    int y = 1 + 1;
+    if (x) {
       print("Hello, World!");
+    }
   }
 }

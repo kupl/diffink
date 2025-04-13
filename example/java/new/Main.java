@@ -1,8 +1,9 @@
 public class Main {
-  public void foo() {
+  private void foo() {
     boolean x = true;
-    if (x) {
+    int k = 0;
+    int y = k + 1;
+    if (x)
       print("Hello, World!");
-    }
   }
 }

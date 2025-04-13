@@ -2,11 +2,47 @@
 
 namespace diffink {
 
+HashNode::HashNode(RawNode &&Info, HashNode *Parent)
+    : Parent{Parent}, Height{0} {
+  if (Parent)
+    Parent->Children.push_back(this);
+  this->Info = std::move(Info);
+  Index = Parent ? Parent->Children.size() - 1 : 0;
+}
+
+void HashNode::toStringRecursively(std::string &Buffer,
+                                   std::size_t CurrentIndentSize,
+                                   std::size_t Indent) const {
+  Buffer.append(' ', CurrentIndentSize).append(toString());
+  for (auto Child : Children)
+    toStringRecursively(Buffer, CurrentIndentSize + Indent, Indent);
+}
+
+std::string HashNode::toString() const {
+  std::string Buffer;
+  Buffer.append(Info.Type);
+  if (!Info.Text.empty())
+    Buffer.append(" : \"").append(Info.Text).push_back('"');
+  Buffer.append(" [")
+      .append(std::to_string(Info.StartByte))
+      .append(",")
+      .append(std::to_string(Info.EndByte))
+      .append("]\n");
+  return Buffer;
+}
+
+std::string HashNode::toStringRecursively(std::size_t Indent) const {
+  std::string Buffer;
+  toStringRecursively(Buffer, 0, Indent);
+  return Buffer;
+}
+
 void HashNode::setMetadataRecursively() {
-  auto TypeHash = xxh::xxhash3<BitMode>(&Type, sizeof(Type));
+  auto SymbolHash = xxh::xxhash3<BitMode>(&Info.Symbol, sizeof(Info.Symbol));
   if (isLeaf()) {
-    ExactHash = xxh::xxhash3<BitMode>({TypeHash, xxh::xxhash3<BitMode>(Text)});
-    StructuralHash = TypeHash;
+    ExactHash =
+        xxh::xxhash3<BitMode>({SymbolHash, xxh::xxhash3<BitMode>(Info.Text)});
+    StructuralHash = SymbolHash;
     Height = 1;
     return;
   }
@@ -24,9 +60,9 @@ void HashNode::setMetadataRecursively() {
   }
 
   ExactHash =
-      xxh::xxhash3<BitMode>({TypeHash, xxh::xxhash3<BitMode>(ExactHashList)});
+      xxh::xxhash3<BitMode>({SymbolHash, xxh::xxhash3<BitMode>(ExactHashList)});
   StructuralHash = xxh::xxhash3<BitMode>(
-      {TypeHash, xxh::xxhash3<BitMode>(StructuralHashList)});
+      {SymbolHash, xxh::xxhash3<BitMode>(StructuralHashList)});
 }
 
 } // namespace diffink

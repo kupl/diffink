@@ -1,44 +1,51 @@
 #ifndef AST_HASHNODE_H
 #define AST_HASHNODE_H
 
+#include "AST/RawNode.h"
 #include <optional>
-#include <string>
-#include <tree_sitter/api.h>
 #include <vector>
 #include <xxhash.hpp>
 
 namespace diffink {
 
 class HashNode {
+public:
+  struct Set {
+    std::vector<const HashNode *> Subtrees;
+  };
+
 private:
   static constexpr std::size_t BitMode{128};
+  static constexpr std::size_t DefaultIndent{2};
+
+private:
   xxh::hash_t<BitMode> ExactHash;
   xxh::hash_t<BitMode> StructuralHash;
-  std::size_t Height;
 
+  RawNode Info;
   HashNode *Parent;
   std::vector<HashNode *> Children;
-  TSSymbol Type;
-  std::string Text;
+  std::size_t Height;
+  std::size_t Index;
+
+private:
+  void toStringRecursively(std::string &Buffer, std::size_t CurrentIndentSize,
+                           std::size_t Indent) const;
 
 public:
-  HashNode(HashNode *Parent, TSSymbol Type, std::string &Text)
-      : Height{0}, Parent{Parent}, Type{Type}, Text(Text) {
-    Parent->Children.push_back(this);
-  }
+  HashNode(RawNode &&Info, HashNode *Parent);
 
-  HashNode(HashNode *Parent, TSSymbol Type, std::string &&Text)
-      : Height{0}, Parent{Parent}, Type{Type}, Text(Text) {
-    Parent->Children.push_back(this);
-  }
+  bool isLeaf() const noexcept { return Height == 1; }
 
-  bool isLeaf() const { return Height == 1; }
+  const RawNode &getInfo() const noexcept { return Info; }
 
-  std::size_t getHeight() const { return Height; }
+  const decltype(Children) &getChildren() const noexcept { return Children; }
 
-  TSSymbol getType() const { return Type; }
+  std::size_t getHeight() const noexcept { return Height; }
 
-  const std::string &getText() const { return Text; }
+  std::string toString() const;
+
+  std::string toStringRecursively(std::size_t Indent = DefaultIndent) const;
 
   void setMetadataRecursively();
 };
