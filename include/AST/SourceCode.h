@@ -1,11 +1,10 @@
-#ifndef PARSER_SOURCECODE_H
-#define PARSER_SOURCECODE_H
+#ifndef AST_SOURCECODE_H
+#define AST_SOURCECODE_H
 
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
 #include <tree_sitter/api.h>
-#include <unordered_set>
 #include <vector>
 
 namespace diffink {
@@ -27,9 +26,10 @@ private:
   std::string Name;
   std::string Content;
   std::vector<TSPoint> ByteToPos;
+  std::vector<TSPoint> ByteToUTF8Pos;
 
 private:
-  void setByteToPos();
+  void setByteMap();
 
 public:
   SourceCode() noexcept = default;
@@ -42,8 +42,17 @@ public:
 
   const char *getContent() const noexcept { return Content.c_str(); }
 
-  TSPoint operator[](std::string::size_type Pos) const noexcept {
-    return ByteToPos[Pos];
+  // Equivalent to "getPosition"
+  TSPoint operator[](std::string::size_type ByteOffset) const noexcept {
+    return ByteToPos[ByteOffset];
+  }
+
+  TSPoint getPosition(std::string::size_type ByteOffset) const noexcept {
+    return ByteToPos[ByteOffset];
+  }
+
+  TSPoint getUTF8Position(std::string::size_type ByteOffset) const noexcept {
+    return ByteToUTF8Pos[ByteOffset];
   }
 
   std::string::size_type getCstringSize() const noexcept {
@@ -54,9 +63,12 @@ public:
     return Content.size() + 1;
   }
 
-  std::string getSubstring(uint32_t StartByte, uint32_t EndByte) const noexcept;
+  std::string getSubstring(std::string::size_type StartByte,
+                           std::string::size_type EndByte) const noexcept {
+    return std::string(getContent() + StartByte, getContent() + EndByte);
+  }
 };
 
 } // namespace diffink
 
-#endif // PARSER_SOURCECODE_H
+#endif // AST_SOURCECODE_H

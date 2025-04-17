@@ -1,31 +1,54 @@
 #ifndef AST_MERKLETREE_H
 #define AST_MERKLETREE_H
 
-#include "AST/HashNode.h"
-#include "AST/RawTree.h"
-#include <list>
+#include "AST/ShallowMap.h"
+#include "TreeDiff/EditAction.h"
+#include "Utils/NodeComp.h"
+#include "Utils/TextDiff.h"
+#include <queue>
 
 namespace diffink {
 
 class MerkleTree {
 private:
-  std::list<HashNode> NodeStorage;
-  HashNode *Root{nullptr};
-  std::vector<TSRange> ChangedRanges;
+  std::unique_ptr<HashNode> Root;
+  std::unique_ptr<TSTree, decltype(&ts_tree_delete)> RawTree;
+  std::unordered_set<const HashNode *> StructuralChanges;
+  std::unordered_set<const HashNode *> TextualChanges;
 
 private:
-  void build(const RawTree &Tree, const HashNode *Parent, TSTreeCursor &Cursor);
+  struct Iterators {
+    const HashNode &OldHashIter;
+    TSTreeCursor &EditedCursor;
+    const HashNode &NewHashIter;
+    TSTreeCursor &NewCursor;
+  };
+
+  void identifyChange(MerkleTree &OldTree, Iterators Iters);
+
+  void clearChanges() noexcept;
 
 public:
-  MerkleTree() noexcept = default;
+  MerkleTree() noexcept : RawTree(nullptr, ts_tree_delete) {}
 
-  void build(const RawTree &Tree);
+  void swap(MerkleTree &Rhs) noexcept;
 
-  HashNode::Set getFullTree() const;
+  void clear() noexcept;
 
-  // static std::pair<HashNode::Set, HashNode::Set>
-  // getIdentialAndChangedSubtrees(const MerkleTree &OldTree,
-  //                               const MerkleTree &NewTree);
+  // Return false if the tree has an error node
+  bool parse(TSParser &Parser, const SourceCode &Code);
+
+  // Return false if the tree has an error node
+  bool parse(TSParser &Parser, MerkleTree &OldTree, const SourceCode &OldCode,
+             const SourceCode &Code, const EditSequence &Seq);
+
+  const HashNode &getRoot() const noexcept { return *Root; }
+
+  void copyFullTree(ShallowTree &TreeCopy) const { TreeCopy.build(*Root); }
+
+  static EditScript copyChangedSubtree(ShallowMap &Map,
+                                       const MerkleTree &OldTree,
+                                       const MerkleTree &NewTree);
 };
 
 } // namespace diffink

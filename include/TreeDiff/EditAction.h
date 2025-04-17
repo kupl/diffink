@@ -19,8 +19,22 @@ struct InsertNode {
   std::string toString() const;
 };
 
+struct InsertTree {
+  const HashNode *Tree;
+  const HashNode *Parent;
+  std::size_t Index;
+
+  std::string toString() const;
+};
+
 struct DeleteNode {
   const HashNode *Leaf;
+
+  std::string toString() const;
+};
+
+struct DeleteTree {
+  const HashNode *Tree;
 
   std::string toString() const;
 };
@@ -45,6 +59,15 @@ struct UpdateNode {
 using EditAction =
     std::variant<edit_action::InsertNode, edit_action::DeleteNode,
                  edit_action::MoveTree, edit_action::UpdateNode>;
+
+using ExtendedEditAction =
+    std::variant<edit_action::InsertNode, edit_action::DeleteNode,
+                 edit_action::MoveTree, edit_action::UpdateNode,
+                 edit_action::InsertTree, edit_action::DeleteTree>;
+
+using EditScript = std::vector<EditAction>;
+
+using ExtendedEditScript = std::vector<ExtendedEditAction>;
 
 } // namespace diffink
 

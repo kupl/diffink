@@ -1,5 +1,5 @@
-#ifndef PARSER_PARSER_H
-#define PARSER_PARSER_H
+#ifndef UTILS_SMARTPARSER_H
+#define UTILS_SMARTPARSER_H
 
 #include <memory>
 #include <tree_sitter/api.h>
@@ -24,4 +24,4 @@ public:
 
 } // namespace diffink
 
-#endif // PARSER_PARSER_H
+#endif // UTILS_SMARTPARSER_H
