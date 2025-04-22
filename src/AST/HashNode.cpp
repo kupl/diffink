@@ -3,14 +3,16 @@
 namespace diffink {
 
 std::string HashNode::UTF8Range::toString() const {
-  return "[(" + std::to_string(StartPos.row) + "," +
+  return "(" + std::to_string(StartPos.row) + "," +
          std::to_string(StartPos.column) + ")-(" + std::to_string(EndPos.row) +
-         "," + std::to_string(EndPos.column) + ")]";
+         "," + std::to_string(EndPos.column) + ")";
 }
 
 void HashNode::makeMetadataRecursively() {
-  auto SymbolHash = xxh::xxhash3<BitMode>(&Symbol, sizeof(Symbol));
-  if (isLeaf()) {
+  SymbolHash = xxh::xxhash3<BitMode>(&Symbol, sizeof(Symbol));
+  Size = 1;
+
+  if (Children.empty()) {
     ExactHash =
         xxh::xxhash3<BitMode>({SymbolHash, xxh::xxhash3<BitMode>(Value)});
     Height = 1;
@@ -23,8 +25,9 @@ void HashNode::makeMetadataRecursively() {
   for (auto &Child : Children) {
     Child.makeMetadataRecursively();
     ExactHashes.push_back(Child.ExactHash);
-    if (Child.Height >= Height)
-      Height = Child.Height + 1;
+
+    Size += Child.Size;
+    Height = std::max(Height, Child.Height + 1);
   }
   ExactHash =
       xxh::xxhash3<BitMode>({SymbolHash, xxh::xxhash3<BitMode>(ExactHashes)});
@@ -49,7 +52,6 @@ void HashNode::toStringRecursively(std::string &Buffer,
 }
 
 void HashNode::makeStructuralHashRecursively() {
-  auto SymbolHash = xxh::xxhash3<BitMode>(&Symbol, sizeof(Symbol));
   if (isLeaf()) {
     StructuralHash = SymbolHash;
     Height = 1;
@@ -93,7 +95,7 @@ std::string HashNode::toString() const {
   Buffer.append(Type);
   if (!Value.empty())
     Buffer.append(": \"").append(Value).push_back('"');
-  Buffer.append("  ").append(PosRange.toString());
+  Buffer.append(" ").append(PosRange.toString());
   return Buffer;
 }
 
@@ -119,19 +121,8 @@ std::unique_ptr<HashNode> HashNode::build(TSNode RootNode,
     while (ts_tree_cursor_goto_next_sibling(&Cursor));
 
   ts_tree_cursor_delete(&Cursor);
+  Root->makeMetadataRecursively();
   return Root;
-}
-
-bool HashNode::isExactlyEqual(const HashNode &Lhs,
-                              const HashNode &Rhs) noexcept {
-  return Lhs.ExactHash.high64 == Rhs.ExactHash.high64 &&
-         Lhs.ExactHash.low64 == Rhs.ExactHash.low64;
-}
-
-bool HashNode::isStructurallyEqual(const HashNode &Lhs,
-                                   const HashNode &Rhs) noexcept {
-  return Lhs.StructuralHash.high64 == Rhs.StructuralHash.high64 &&
-         Lhs.StructuralHash.low64 == Rhs.StructuralHash.low64;
 }
 
 } // namespace diffink

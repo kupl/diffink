@@ -1,11 +1,9 @@
 #ifndef AST_MERKLETREE_H
 #define AST_MERKLETREE_H
 
-#include "AST/ShallowMap.h"
 #include "TreeDiff/EditAction.h"
 #include "Utils/NodeComp.h"
 #include "Utils/TextDiff.h"
-#include <queue>
 
 namespace diffink {
 
@@ -13,18 +11,20 @@ class MerkleTree {
 private:
   std::unique_ptr<HashNode> Root;
   std::unique_ptr<TSTree, decltype(&ts_tree_delete)> RawTree;
-  std::unordered_set<const HashNode *> StructuralChanges;
-  std::unordered_set<const HashNode *> TextualChanges;
+
+  std::vector<std::pair<const HashNode *, const HashNode *>> Mapping;
+  std::unordered_set<const HashNode *> ChangedNodes;
+  std::unordered_set<const HashNode *> HasChangedChild;
 
 private:
-  struct Iterators {
+  struct Iterator {
     const HashNode &OldHashIter;
-    TSTreeCursor &EditedCursor;
+    TSTreeCursor &OldCursor;
     const HashNode &NewHashIter;
     TSTreeCursor &NewCursor;
   };
 
-  void identifyChange(MerkleTree &OldTree, Iterators Iters);
+  void identifyChange(MerkleTree &OldTree, Iterator Iters);
 
   void clearChanges() noexcept;
 
@@ -39,16 +39,21 @@ public:
   bool parse(TSParser &Parser, const SourceCode &Code);
 
   // Return false if the tree has an error node
-  bool parse(TSParser &Parser, MerkleTree &OldTree, const SourceCode &OldCode,
-             const SourceCode &Code, const EditSequence &Seq);
+  bool parseIncrementally(TSParser &Parser, MerkleTree &OldTree,
+                          const SourceCode &OldCode, const SourceCode &Code,
+                          const EditSequence &Seq);
 
   const HashNode &getRoot() const noexcept { return *Root; }
 
-  void copyFullTree(ShallowTree &TreeCopy) const { TreeCopy.build(*Root); }
+  const decltype(Mapping) &getMapping() const noexcept { return Mapping; }
 
-  static EditScript copyChangedSubtree(ShallowMap &Map,
-                                       const MerkleTree &OldTree,
-                                       const MerkleTree &NewTree);
+  bool isChanged(const HashNode &Node) const noexcept {
+    return ChangedNodes.contains(&Node);
+  }
+
+  bool hasChangedChild(const HashNode &Node) const noexcept {
+    return HasChangedChild.contains(&Node);
+  }
 };
 
 } // namespace diffink

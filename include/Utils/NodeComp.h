@@ -8,9 +8,9 @@ namespace diffink {
 
 enum class NodeComp {
   Equal,
+  Inequal,
   Precedes,
   Succeeds,
-  Inequal,
 };
 
 NodeComp compareNodes(const TSNode &LeftNode, const TSNode &RightNode);

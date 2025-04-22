@@ -12,14 +12,14 @@ EditSequence diffText(const SourceCode &OldCode, const SourceCode &NewCode,
       std::vector<uint32_t>(NewCode.getContentSize(), 0));
 
   // Initialize the distance table and the mapping
-  for (uint32_t o = 0; o != OldCode.getContentSize(); ++o)
+  for (uint32_t o{1}; o != OldCode.getContentSize(); ++o)
     DistanceTable[o][0] = o;
-  for (uint32_t n = 0; n != NewCode.getContentSize(); ++n)
+  for (uint32_t n{1}; n != NewCode.getContentSize(); ++n)
     DistanceTable[0][n] = n;
 
   // Fill the distance table
-  for (uint32_t o = 1; o != OldCode.getContentSize(); ++o)
-    for (uint32_t n = 1; n != NewCode.getContentSize(); ++n)
+  for (uint32_t o{1}; o != OldCode.getContentSize(); ++o)
+    for (uint32_t n{1}; n != NewCode.getContentSize(); ++n)
       DistanceTable[o][n] =
           OldStr[o - 1] == NewStr[n - 1]
               ? DistanceTable[o - 1][n - 1]

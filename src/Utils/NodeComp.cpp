@@ -12,7 +12,7 @@ NodeComp compareNodes(const TSNode &LeftNode, const TSNode &RightNode) {
     if (LeftEnd == RightEnd)
       return NodeComp::Equal;
     else
-      return NodeComp::Precedes;
+      return NodeComp::Inequal;
   }
   if (LeftEnd < RightStart)
     return NodeComp::Precedes;

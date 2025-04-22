@@ -102,21 +102,27 @@ int main() {
   // OldStr = "Node *const node;";
   // NewStr = "Node *constnode;";
 
-  // OldStr = "x = x + x + x;\n"
-  //          "y = 1 + 1 + 1;\n";
-  // NewStr = "y = 1 + 1 + 1;\n"
-  //          "x = x + x + x;\n";
+  OldStr = "x = x + x;\n"
+           "y = 1 + 1;\n";
+  NewStr = "y = 1 + 1;\n"
+           "x = x + x;\n";
 
-  OldStr = "axes_list = [a for a in self.figure.get_axes()\n"
-           "             if a.patch.contains_point(xy)]\n"
-           "\n"
-           "    if axes_list:\n"
-           "        axes = cbook._topmost_artist(axes_list)\n";
-  NewStr = "ICSE_list = [a for a in self.figure.get_axes()\n"
-           "             if a.patch.contains_point(xy) and a.get_visible()]\n"
-           "\n"
-           "    if axes_list:\n"
-           "        axes = cbook._topmost_artist(axes_list)\n";
+  // OldStr = "x;\n"
+  //          "y;";
+  // NewStr = "y;\n"
+  //          "x;";
+
+  // OldStr = "axes_list = [a for a in self.figure.get_axes()\n"
+  //          "             if a.patch.contains_point(xy)]\n"
+  //          "\n"
+  //          "    if axes_list:\n"
+  //          "        axes = cbook._topmost_artist(axes_list)\n";
+  // NewStr = "ICSE_list = [a for a in self.figure.get_axes()\n"
+  //          "             if a.patch.contains_point(xy) and
+  //          a.get_visible()]\n"
+  //          "\n"
+  //          "    if axes_list:\n"
+  //          "        axes = cbook._topmost_artist(axes_list)\n";
 
   auto OldCode = std::make_unique<diffink::SourceCode>();
   OldCode->newContent("Old", OldStr);
@@ -129,14 +135,22 @@ int main() {
   //             "\n";
   // }
 
-  diffink::SmartParser Parser(tree_sitter_python);
+  diffink::SmartParser Parser(tree_sitter_cpp);
   diffink::MerkleTree OldTree;
   OldTree.parse(Parser.get(), *OldCode);
   diffink::MerkleTree NewTree;
-  NewTree.parse(Parser.get(), OldTree, *OldCode, *NewCode, Diff);
+  NewTree.parseIncrementally(Parser.get(), OldTree, *OldCode, *NewCode, Diff);
 
   std::cout << "OldTree:\n";
   std::cout << OldTree.getRoot().toStringRecursively() << "\n";
   std::cout << "NewTree:\n";
-  std::cout << NewTree.getRoot().toStringRecursively() << "\n";
+  std::cout << NewTree.getRoot().toStringRecursively() << "\n\n\n";
+
+  diffink::BaseTreeDiff TreeDiff;
+  auto Script = TreeDiff.diffink(OldTree, NewTree);
+
+  for (const auto &Edit : Script) {
+    std::visit([](const auto &Action) { std::cout << Action.toString(); },
+               Edit);
+  }
 }
