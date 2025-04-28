@@ -1,4 +1,4 @@
-#include "AST/HashNode.h"
+#include "DiffInk/AST/HashNode.h"
 
 namespace diffink {
 
@@ -8,14 +8,34 @@ std::string HashNode::UTF8Range::toString() const {
          "," + std::to_string(EndPos.column) + ")";
 }
 
+bool HashNode::build(const SourceCode &Code, TSTreeCursor &Cursor,
+                     HashNode &Parent,
+                     std::unordered_set<std::string> &Ignore) {
+  auto Node = ts_tree_cursor_current_node(&Cursor);
+  if (ts_node_is_error(Node))
+    return false;
+  if (Ignore.contains(ts_node_type(Node)))
+    return true;
+
+  if (!ts_tree_cursor_goto_first_child(&Cursor))
+    Parent.Children.emplace_back(Node, Code, true);
+  else {
+    auto &HashNode = Parent.Children.emplace_back(Node, Code, false);
+    do
+      if (!build(Code, Cursor, HashNode, Ignore))
+        return false;
+    while (ts_tree_cursor_goto_next_sibling(&Cursor));
+    ts_tree_cursor_goto_parent(&Cursor);
+  }
+  return true;
+}
+
 void HashNode::makeMetadataRecursively() {
   SymbolHash = xxh::xxhash3<BitMode>(&Symbol, sizeof(Symbol));
-  Size = 1;
 
   if (Children.empty()) {
     ExactHash =
         xxh::xxhash3<BitMode>({SymbolHash, xxh::xxhash3<BitMode>(Value)});
-    Height = 1;
     return;
   }
 
@@ -25,12 +45,18 @@ void HashNode::makeMetadataRecursively() {
   for (auto &Child : Children) {
     Child.makeMetadataRecursively();
     ExactHashes.push_back(Child.ExactHash);
-
-    Size += Child.Size;
     Height = std::max(Height, Child.Height + 1);
+    Size += Child.Size;
   }
   ExactHash =
       xxh::xxhash3<BitMode>({SymbolHash, xxh::xxhash3<BitMode>(ExactHashes)});
+}
+
+void HashNode::makePostOrder(std::vector<const HashNode *> &PostOrder,
+                             const HashNode *Iter) const {
+  for (const auto &Child : Iter->Children)
+    makePostOrder(PostOrder, &Child);
+  PostOrder.push_back(Iter);
 }
 
 HashNode::HashNode(const TSNode &RawNode, const SourceCode &Code,
@@ -43,18 +69,16 @@ HashNode::HashNode(const TSNode &RawNode, const SourceCode &Code,
       PosRange(UTF8Range{Code.getUTF8Position(ts_node_start_byte(RawNode)),
                          Code.getUTF8Position(ts_node_end_byte(RawNode))}) {}
 
-void HashNode::toStringRecursively(std::string &Buffer,
-                                   std::size_t CurrentIndentSize,
+void HashNode::toStringRecursively(std::string &Buffer, std::size_t Depth,
                                    std::size_t Indent) const {
-  Buffer.append(CurrentIndentSize, ' ').append(toString()).push_back('\n');
+  Buffer.append(Depth * Indent, ' ').append(toString()).push_back('\n');
   for (auto &Child : Children)
-    Child.toStringRecursively(Buffer, CurrentIndentSize + Indent, Indent);
+    Child.toStringRecursively(Buffer, Depth + 1, Indent);
 }
 
 void HashNode::makeStructuralHashRecursively() {
   if (isLeaf()) {
     StructuralHash = SymbolHash;
-    Height = 1;
     return;
   }
 
@@ -64,30 +88,16 @@ void HashNode::makeStructuralHashRecursively() {
   for (auto &Child : Children) {
     Child.makeStructuralHashRecursively();
     StructuralHashes.push_back(Child.StructuralHash);
-    if (Child.Height >= Height)
-      Height = Child.Height + 1;
   }
   StructuralHash = xxh::xxhash3<BitMode>(
       {SymbolHash, xxh::xxhash3<BitMode>(StructuralHashes)});
 }
 
-bool HashNode::build(const SourceCode &Code, TSTreeCursor &Cursor,
-                     HashNode &Parent) {
-  auto Node = ts_tree_cursor_current_node(&Cursor);
-  if (ts_node_is_error(Node))
-    return false;
-
-  if (!ts_tree_cursor_goto_first_child(&Cursor))
-    Parent.Children.emplace_back(Node, Code, true);
-  else {
-    auto &HashNode = Parent.Children.emplace_back(Node, Code, false);
-    do
-      if (!build(Code, Cursor, HashNode))
-        return false;
-    while (ts_tree_cursor_goto_next_sibling(&Cursor));
-    ts_tree_cursor_goto_parent(&Cursor);
-  }
-  return true;
+std::vector<const HashNode *> HashNode::makePostOrder() const {
+  std::vector<const HashNode *> PostOrder;
+  PostOrder.reserve(Size);
+  makePostOrder(PostOrder, this);
+  return PostOrder;
 }
 
 std::string HashNode::toString() const {
@@ -106,8 +116,9 @@ std::string HashNode::toStringRecursively(std::size_t Indent) const {
   return Buffer;
 }
 
-std::unique_ptr<HashNode> HashNode::build(TSNode RootNode,
-                                          const SourceCode &Code) {
+std::unique_ptr<HashNode>
+HashNode::build(TSNode RootNode, const SourceCode &Code,
+                std::unordered_set<std::string> &Ignore) {
   if (ts_node_is_null(RootNode) || ts_node_is_error(RootNode))
     return nullptr;
 
@@ -116,7 +127,7 @@ std::unique_ptr<HashNode> HashNode::build(TSNode RootNode,
 
   if (ts_tree_cursor_goto_first_child(&Cursor))
     do
-      if (!build(Code, Cursor, *Root))
+      if (!build(Code, Cursor, *Root, Ignore))
         return nullptr;
     while (ts_tree_cursor_goto_next_sibling(&Cursor));
 

@@ -1,0 +1,9 @@
+[
+  { "lang": "c", "ignore": [";"] },
+  { "lang": "cpp", "ignore": [";"] },
+  { "lang": "csharp", "ignore": [";"] },
+  { "lang": "java", "ignore": [";"] },
+  { "lang": "javascript", "ignore": [";"] },
+  { "lang": "typescript", "ignore": [";"] },
+  { "lang": "rust", "ignore": [";"] }
+]

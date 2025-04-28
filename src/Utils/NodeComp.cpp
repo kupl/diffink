@@ -1,4 +1,4 @@
-#include "Utils/NodeComp.h"
+#include "DiffInk/Utils/NodeComp.h"
 
 namespace diffink {
 

@@ -1,12 +1,28 @@
-#include "DiffInk.h"
+#include "DiffInk/Api.h"
 #include <bitset>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <tree-sitter-cpp.h>
+#include <tree-sitter-java.h>
 #include <tree-sitter-python.h>
 #include <tree_sitter/api.h>
+
+std::string read(const std::filesystem::path &FilePath) {
+  std::ifstream File(FilePath, std::ios::binary);
+  if (!File)
+    throw std::runtime_error("Failed to open file: " + FilePath.string());
+
+  const auto FileSize = std::filesystem::file_size(FilePath);
+  auto Content = std::string(FileSize, '\0');
+
+  if (!File.read(Content.data(), FileSize))
+    throw std::runtime_error("Failed to read file: " + FilePath.string());
+  return Content;
+}
 
 int main() {
   std::string OldStr = "int main() {\n"
@@ -102,15 +118,15 @@ int main() {
   // OldStr = "Node *const node;";
   // NewStr = "Node *constnode;";
 
-  OldStr = "x = x + x;\n"
-           "y = 1 + 1;\n";
-  NewStr = "y = 1 + 1;\n"
-           "x = x + x;\n";
+  OldStr = "x = a;\n"
+           "y = b;\n";
+  NewStr = "y = b;\n"
+           "x = a;\n";
 
-  // OldStr = "x;\n"
-  //          "y;";
-  // NewStr = "y;\n"
-  //          "x;";
+  OldStr = "class C {public: void C();};\n"
+           "class C {private: void D();};\n";
+  NewStr = "class C {private: int D();};\n"
+           "class C {public: void C();};\n";
 
   // OldStr = "axes_list = [a for a in self.figure.get_axes()\n"
   //          "             if a.patch.contains_point(xy)]\n"
@@ -124,32 +140,39 @@ int main() {
   //          "    if axes_list:\n"
   //          "        axes = cbook._topmost_artist(axes_list)\n";
 
-  auto OldCode = std::make_unique<diffink::SourceCode>();
-  OldCode->newContent("Old", OldStr);
-  auto NewCode = std::make_unique<diffink::SourceCode>();
-  NewCode->newContent("New", NewStr);
-  auto Diff = diffink::diffText(*OldCode, *NewCode);
-  // for (const auto &Edit : Diff) {
-  //   std::cout << "Edit: " << Edit.OldStartByte << ", " << Edit.OldEndByte
-  //             << ", " << Edit.NewStartByte << ", " << Edit.NewEndByte <<
-  //             "\n";
-  // }
+  // auto OldCode = std::make_unique<diffink::SourceCode>();
+  // OldCode->newContent("Old", OldStr);
+  // auto NewCode = std::make_unique<diffink::SourceCode>();
+  // NewCode->newContent("New", NewStr);
+  // auto Diff = diffink::diffText(*OldCode, *NewCode);
 
-  diffink::SmartParser Parser(tree_sitter_cpp);
-  diffink::MerkleTree OldTree;
-  OldTree.parse(Parser.get(), *OldCode);
-  diffink::MerkleTree NewTree;
-  NewTree.parseIncrementally(Parser.get(), OldTree, *OldCode, *NewCode, Diff);
+  diffink::SourceCode OldCode(read("example/java/old/Test.java"));
+  diffink::SourceCode NewCode(read("example/java/new/Test.java"));
+  auto Diff = diffink::diffText(OldCode, NewCode);
+
+  diffink::SmartParser Parser(tree_sitter_java);
+  diffink::MerkleTree OldTree, NewTree;
+  OldTree.setIgnore({";"});
+  NewTree.setIgnore({";"});
+  OldTree.parse(Parser.get(), OldCode);
+  NewTree.parseIncrementally(Parser.get(), OldTree, OldCode, NewCode, Diff);
 
   std::cout << "OldTree:\n";
   std::cout << OldTree.getRoot().toStringRecursively() << "\n";
   std::cout << "NewTree:\n";
   std::cout << NewTree.getRoot().toStringRecursively() << "\n\n\n";
 
-  diffink::BaseTreeDiff TreeDiff;
-  auto Script = TreeDiff.diffink(OldTree, NewTree);
+  auto TestMatcher = diffink::makeGumtreeOptimal();
 
-  for (const auto &Edit : Script) {
+  // auto Script =
+  // diffink::TreeDiff::runDiffInk(TestMatcher.get(), OldTree, NewTree);
+  auto Script = diffink::TreeDiff::runDiff(TestMatcher.get(), OldTree, NewTree);
+
+  auto ExScript = diffink::simplifyEditScript(Script);
+
+  std::cout << Script.size() << "\n";
+  std::cout << ExScript.size() << "\n";
+  for (const auto &Edit : ExScript) {
     std::visit([](const auto &Action) { std::cout << Action.toString(); },
                Edit);
   }

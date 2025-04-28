@@ -1,4 +1,4 @@
-#include "Utils/TextDiff.h"
+#include "DiffInk/Utils/TextDiff.h"
 
 namespace diffink {
 
@@ -47,7 +47,8 @@ EditSequence diffText(const SourceCode &OldCode, const SourceCode &NewCode,
       break;
     }
 
-    bool IsCommonCharacter = OldStr[o - 1] == NewStr[n - 1];
+    bool IsCommonCharacter = OldStr[o - 1] == NewStr[n - 1] &&
+                             DistanceTable[o][n] == DistanceTable[o - 1][n - 1];
     bool IsInsertAvaliable = DistanceTable[o][n] == DistanceTable[o][n - 1] + 1;
     bool IsDeleteAvaliable = DistanceTable[o][n] == DistanceTable[o - 1][n] + 1;
 

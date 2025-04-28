@@ -1,6 +1,10 @@
-#include "AST/SourceCode.h"
+#include "DiffInk/AST/SourceCode.h"
 
 namespace diffink {
+
+SourceCode::SourceCode(std::string &&Content) : Content(std::move(Content)) {
+  setByteMap();
+}
 
 void SourceCode::setByteMap() {
   ByteToPos.clear();
@@ -93,29 +97,19 @@ void SourceCode::setByteMap() {
   ByteToUTF8Pos.emplace_back(UTF8Row, UTF8Col);
 }
 
-void SourceCode::read(const std::filesystem::path &FilePath) {
-  std::ifstream File(FilePath, std::ios::binary);
-  if (!File)
-    throw std::runtime_error("Failed to open file: " + FilePath.string());
-  Name = FilePath.filename().string();
+// void SourceCode::read(const std::filesystem::path &FilePath) {
+//   std::ifstream File(FilePath, std::ios::binary);
+//   if (!File)
+//     throw std::runtime_error("Failed to open file: " + FilePath.string());
+//   Name = FilePath.filename().string();
 
-  const auto FileSize = std::filesystem::file_size(FilePath);
-  this->Content.clear();
-  decltype(Content)().swap(Content);
-  Content = std::string(FileSize, '\0');
+//   const auto FileSize = std::filesystem::file_size(FilePath);
+//   this->Content.clear();
+//   decltype(Content)().swap(Content);
+//   Content = std::string(FileSize, '\0');
 
-  if (!File.read(Content.data(), FileSize))
-    throw std::runtime_error("Failed to read file: " + FilePath.string());
-  setByteMap();
-}
-
-void SourceCode::newContent(const std::string Name,
-                            const std::string &Content) {
-  this->Name = Name;
-  this->Content.clear();
-  decltype(this->Content)().swap(this->Content);
-  this->Content = Content;
-  setByteMap();
-}
+//   if (!File.read(Content.data(), FileSize))
+//     throw std::runtime_error("Failed to read file: " + FilePath.string());
+// }
 
 } // namespace diffink

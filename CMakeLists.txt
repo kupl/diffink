@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10.0)
+cmake_minimum_required(VERSION 3.20.0)
 project(diffink)
 
 # Compiler
@@ -24,6 +24,10 @@ file(GLOB TREE_SITTER_SRC
 add_executable(${CMAKE_PROJECT_NAME}
   ${SOURCES}
   ${TREE_SITTER_SRC}
+  )
+
+set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
   )
 
 # Include

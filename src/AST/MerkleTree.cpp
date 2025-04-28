@@ -1,4 +1,4 @@
-#include "AST/MerkleTree.h"
+#include "DiffInk/AST/MerkleTree.h"
 
 namespace diffink {
 
@@ -139,7 +139,7 @@ bool MerkleTree::parse(TSParser &Parser, const SourceCode &Code) {
   RawTree.reset(ts_parser_parse_string(&Parser, nullptr, Code.getContent(),
                                        Code.getCstringSize()));
 
-  if (Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code))
+  if (Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code, Ignore))
     return true;
   clear();
   return false;
@@ -156,7 +156,8 @@ bool MerkleTree::parseIncrementally(TSParser &Parser, MerkleTree &OldTree,
   applyEditSequence(OldCode, Code, *EditedTree, Seq);
   RawTree.reset(ts_parser_parse_string(&Parser, EditedTree, Code.getContent(),
                                        Code.getCstringSize()));
-  if (!(Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code))) {
+  if (!(Root =
+            HashNode::build(ts_tree_root_node(RawTree.get()), Code, Ignore))) {
     ts_tree_delete(EditedTree);
     clear();
     return false;
