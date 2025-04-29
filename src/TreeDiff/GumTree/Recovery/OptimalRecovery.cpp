@@ -94,9 +94,6 @@ void OptimalRecovery::match(TreeDiff &Mapping, VirtualNode *Old,
             TreeDist[di][dj] = ForestDist[di][dj] =
                 std::min({ForestDist[di - 1][dj] + 1,
                           ForestDist[di][dj - 1] + 1, CostUpd});
-            if (TreeDist[di][dj] == std::numeric_limits<int>::max() ||
-                TreeDist[di][dj] < 0)
-              throw std::runtime_error("fuck");
           }
 
           else
