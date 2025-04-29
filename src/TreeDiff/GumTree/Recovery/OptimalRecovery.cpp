@@ -1,4 +1,5 @@
 #include "DiffInk/TreeDiff/GumTree/Recovery/OptimalRecovery.h"
+#include <iostream>
 
 namespace diffink {
 
@@ -127,8 +128,10 @@ void OptimalRecovery::match(TreeDiff &Mapping, VirtualNode *Old,
             ForestDist[Row - 1][Col] + 1 == ForestDist[Row][Col])
           --Row;
         else if (Col > FirstCol &&
-                 ForestDist[Row][Col - 1] + 1 == ForestDist[Row][Col])
+                 ForestDist[Row][Col - 1] + 1 == ForestDist[Row][Col]) {
+          std::cout << ForestDist[Row][Col - 1] << ". " << ForestDist[Row][Col];
           --Col;
+        }
 
         else {
           if (LldOld(Row) == LldOld(LastRow) &&
