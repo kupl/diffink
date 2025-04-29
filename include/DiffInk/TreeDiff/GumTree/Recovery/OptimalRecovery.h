@@ -14,7 +14,7 @@ private:
   const int MaxSize;
 
 private:
-  int computeSimilarity(VirtualNode *Left, VirtualNode *Right) const;
+  int computeUpdateCost(VirtualNode *Left, VirtualNode *Right) const;
 
   void tryMapping(TreeDiff &Mapping, VirtualNode *Old, VirtualNode *New) const;
 

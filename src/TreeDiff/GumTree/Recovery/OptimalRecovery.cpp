@@ -5,7 +5,7 @@ namespace diffink {
 
 namespace gumtree {
 
-int OptimalRecovery::computeSimilarity(VirtualNode *Left,
+int OptimalRecovery::computeUpdateCost(VirtualNode *Left,
                                        VirtualNode *Right) const {
   if (Left->Original.getSymbol() != Right->Original.getSymbol())
     return std::numeric_limits<int>::max();
@@ -63,7 +63,6 @@ void OptimalRecovery::match(TreeDiff &Mapping, VirtualNode *Old,
 
   const int N = OldPostOrder.size();
   const int M = NewPostOrder.size();
-
   std::vector<std::vector<int>> TreeDist(N + 1, std::vector<int>(M + 1, 0));
   std::vector<std::vector<int>> ForestDist(N + 1, std::vector<int>(M + 1, 0));
 
@@ -74,81 +73,73 @@ void OptimalRecovery::match(TreeDiff &Mapping, VirtualNode *Old,
     return NewLeftMost[Index - 1] + 1;
   };
 
-  for (auto OldKey : OldKeys) {
-    auto OldL = OldLeftMost[OldKey] + 1;
-    ++OldKey;
+  for (auto i : OldKeys) {
+    ++i;
 
-    for (auto NewKey : NewKeys) {
-      auto NewL = NewLeftMost[NewKey] + 1;
-      ++NewKey;
+    for (auto j : NewKeys) {
+      ++j;
 
-      ForestDist[OldL - 1][NewL - 1] = 0;
-      for (int i{OldL}; i <= OldKey; ++i)
-        ForestDist[i][NewL - 1] = ForestDist[i - 1][NewL - 1] + 1;
+      ForestDist[LldOld(i) - 1][LldNew(j) - 1] = 0;
+      for (int di = LldOld(i); di != i + 1; ++di) {
+        ForestDist[di][LldNew(j) - 1] = ForestDist[di - 1][LldNew(j) - 1] + 1;
+        for (int dj = LldNew(j); dj != j + 1; ++dj) {
+          ForestDist[LldOld(i) - 1][dj] = ForestDist[LldOld(i) - 1][dj - 1] + 1;
 
-      for (int j{NewL}; j <= NewKey; ++j)
-        ForestDist[OldL - 1][j] = ForestDist[OldL - 1][j - 1] + 1;
+          if (LldOld(di) == LldOld(i) && LldNew(j) == LldNew(j)) {
+            auto CostUpd =
+                computeUpdateCost(OldPostOrder[di - 1], NewPostOrder[dj - 1]);
+            if (CostUpd != std::numeric_limits<int>::max())
+              CostUpd += ForestDist[di - 1][dj - 1];
 
-      for (int i{OldL}; i <= OldKey; ++i) {
-        for (int j{NewL}; j <= NewKey; ++j) {
-          auto CostDel = ForestDist[i - 1][j] + 1;
-          auto CostIns = ForestDist[i][j - 1] + 1;
-
-          if (LldOld(i) == OldL && LldNew(j) == NewL) {
-            auto Similarity =
-                computeSimilarity(OldPostOrder[i - 1], NewPostOrder[j - 1]);
-            auto CostUpd = (Similarity == std::numeric_limits<int>::max())
-                               ? std::numeric_limits<int>::max()
-                               : ForestDist[i - 1][j - 1] + Similarity;
-            ForestDist[i][j] = std::min({CostDel, CostIns, CostUpd});
-            TreeDist[i][j] = ForestDist[i][j];
+            TreeDist[di][dj] = ForestDist[di][dj] =
+                std::min({ForestDist[di - 1][dj] + 1,
+                          ForestDist[di][dj - 1] + 1, CostUpd});
+            if (TreeDist[di][dj] == std::numeric_limits<int>::max() ||
+                TreeDist[di][dj] < 0)
+              throw std::runtime_error("fuck");
           }
 
           else
-            ForestDist[i][j] = std::min(
-                {CostDel, CostIns,
-                 ForestDist[LldOld(i) - 1][LldNew(j) - 1] + TreeDist[i][j]});
+            ForestDist[di][dj] = std::min(
+                {ForestDist[di - 1][dj] + 1, ForestDist[di][dj - 1] + 1,
+                 ForestDist[LldOld(di) - 1][LldNew(dj) - 1] +
+                     TreeDist[di][dj]});
         }
       }
-      TreeDist[OldKey][NewKey] = ForestDist[OldKey][NewKey];
     }
+  }
 
-    std::stack<std::pair<int, int>> Stack;
-    Stack.emplace(N, M);
+  std::stack<std::pair<int, int>> Stack;
+  Stack.emplace(N, M);
 
-    while (!Stack.empty()) {
-      const auto [LastRow, LastCol] = Stack.top();
-      Stack.pop();
-      const auto FirstRow = LldOld(LastRow) - 1;
-      const auto FirstCol = LldNew(LastCol) - 1;
+  while (!Stack.empty()) {
+    const auto [LastRow, LastCol] = Stack.top();
+    Stack.pop();
+    const auto FirstRow = LldOld(LastRow) - 1;
+    const auto FirstCol = LldNew(LastCol) - 1;
 
-      for (auto Row = LastRow, Col = LastCol;
-           Row > FirstRow || Col > FirstCol;) {
-        if (Row > FirstRow &&
-            ForestDist[Row - 1][Col] + 1 == ForestDist[Row][Col])
-          --Row;
-        else if (Col > FirstCol &&
-                 ForestDist[Row][Col - 1] + 1 == ForestDist[Row][Col]) {
-          std::cout << ForestDist[Row][Col - 1] << ". " << ForestDist[Row][Col];
-          --Col;
-        }
+    for (auto Row = LastRow, Col = LastCol; Row > FirstRow || Col > FirstCol;) {
+      if (Row > FirstRow &&
+          ForestDist[Row - 1][Col] + 1 == ForestDist[Row][Col])
+        --Row;
+      else if (Col > FirstCol &&
+               ForestDist[Row][Col - 1] + 1 == ForestDist[Row][Col])
+        --Col;
 
-        else {
-          if (LldOld(Row) == LldOld(LastRow) &&
-              LldNew(Col) == LldNew(LastCol)) {
-            if (OldPostOrder[Row - 1]->Original.getSymbol() ==
-                NewPostOrder[Col - 1]->Original.getSymbol()) {
-              tryMapping(Mapping, OldPostOrder[Row - 1], NewPostOrder[Col - 1]);
-              --Row;
-              --Col;
-            } else
-              throw std::runtime_error(
-                  "Unreachable code in OptimalRecovery::match");
-          } else {
-            Stack.emplace(Row, Col);
-            Row = LldOld(Row) - 1;
-            Col = LldNew(Col) - 1;
-          }
+      else {
+        if (LldOld(Row) == LldOld(LastRow) && LldNew(Col) == LldNew(LastCol)) {
+          if (OldPostOrder[Row - 1]->Original.getSymbol() ==
+              NewPostOrder[Col - 1]->Original.getSymbol()) {
+            tryMapping(Mapping, OldPostOrder[Row - 1], NewPostOrder[Col - 1]);
+            --Row;
+            --Col;
+          } else
+            throw std::runtime_error(
+                "Unreachable code in OptimalRecovery::match");
+        } else {
+          Stack.emplace(Row, Col);
+          Row = LldOld(Row) - 1;
+          Col = LldNew(Col) - 1;
         }
       }
     }
