@@ -6,8 +6,7 @@ void TreeDiff::match(Matcher *Mat, const MerkleTree &Old,
                      const MerkleTree &New) {
   OldTree.build(Old.getRoot());
   NewTree.build(New.getRoot());
-  insertMapping(OldTree.getRoot(), NewTree.getRoot());
-  Mat->match(*this, OldTree.getRoot()->Children, NewTree.getRoot()->Children);
+  Mat->match(*this, {OldTree.getRoot()}, {NewTree.getRoot()});
 }
 
 void TreeDiff::matchDiffInk(Matcher *Mat, const MerkleTree &Old,
@@ -91,10 +90,12 @@ void TreeDiff::earlyMatching(const MerkleTree &New) {
     for (; Index != ParentPartner->Children.size(); ++Index)
       if (Node->Parent->Children[Index] == Node)
         break;
-    auto Partner = ParentPartner->Children[Index];
 
-    if (HashNode::isExactlyEqual(Partner->Original, Node->Original))
-      insertMapping(Partner, Node);
+    if (Index < ParentPartner->Children.size()) {
+      auto Partner = ParentPartner->Children[Index];
+      if (HashNode::isExactlyEqual(Partner->Original, Node->Original))
+        insertMapping(Partner, Node);
+    }
   }
 }
 
@@ -182,7 +183,8 @@ EditScript TreeDiff::makeEditScript() {
         Script.emplace_back(
             edit_action::MoveTree{.Subtree = Partner->Original,
                                   .Parent = ParentPartner->Original,
-                                  .Index = Index});
+                                  .Index = Index,
+                                  .MovedSubtree = Node->Original});
         OldTree.move(Partner, ParentPartner, Index);
       }
     }
@@ -231,7 +233,8 @@ EditScript TreeDiff::makeEditScript() {
           Script.emplace_back(
               edit_action::MoveTree{.Subtree = ChildPartner->Original,
                                     .Parent = Partner->Original,
-                                    .Index = Index});
+                                    .Index = Index,
+                                    .MovedSubtree = Child->Original});
           OldTree.move(ChildPartner, Partner, Index);
           ChildPartner->Marker = true;
           Child->Marker = true;
@@ -293,6 +296,18 @@ bool TreeDiff::areContained(VirtualNode *OldNode, VirtualNode *NewNode) const {
 void TreeDiff::insertMapping(VirtualNode *OldNode, VirtualNode *NewNode) {
   OldToNewMapping.emplace(OldNode, NewNode);
   NewToOldMapping.emplace(NewNode, OldNode);
+}
+
+void TreeDiff::overrideMapping(VirtualNode *OldNode, VirtualNode *NewNode) {
+  auto AltOld = findNewToOldMapping(NewNode);
+  auto AltNew = findOldToNewMapping(OldNode);
+  if (AltOld && AltOld != OldNode)
+    OldToNewMapping.erase(AltOld);
+  if (AltNew && AltNew != NewNode)
+    NewToOldMapping.erase(AltNew);
+
+  OldToNewMapping[OldNode] = NewNode;
+  NewToOldMapping[NewNode] = OldNode;
 }
 
 EditScript TreeDiff::runDiff(Matcher *Mat, const MerkleTree &Old,

@@ -6,13 +6,28 @@ SourceCode::SourceCode(std::string &&Content) : Content(std::move(Content)) {
   setByteMap();
 }
 
+SourceCode::SourceCode(std::string &Content) : Content(Content) {
+  setByteMap();
+}
+
 void SourceCode::setByteMap() {
+  constexpr unsigned char OneByteMask{0b10000000};
+  constexpr unsigned char OneByteExpected{0};
+  constexpr unsigned char ContinuationMask{0b11000000};
+  constexpr unsigned char ContinuationExpected{0b10000000};
+  constexpr unsigned char TwoByteMask{0b11100000};
+  constexpr unsigned char TwoByteExpected{0b11000000};
+  constexpr unsigned char ThreeByteMask{0b11110000};
+  constexpr unsigned char ThreeByteExpected{0b11100000};
+  constexpr unsigned char FourByteMask{0b11111000};
+  constexpr unsigned char FourByteExpected{0b11110000};
+
   ByteToPos.clear();
   decltype(ByteToPos)().swap(ByteToPos);
-  ByteToPos.reserve(getContentSize());
+  ByteToPos.reserve(getSize() + 1);
   ByteToUTF8Pos.clear();
   decltype(ByteToUTF8Pos)().swap(ByteToUTF8Pos);
-  ByteToUTF8Pos.reserve(getContentSize());
+  ByteToUTF8Pos.reserve(getSize());
 
   std::string::size_type Row{0}, Col{0};
   std::string::size_type UTF8Row{0}, UTF8Col{0};
@@ -96,20 +111,5 @@ void SourceCode::setByteMap() {
   ByteToPos.emplace_back(Row, Col);
   ByteToUTF8Pos.emplace_back(UTF8Row, UTF8Col);
 }
-
-// void SourceCode::read(const std::filesystem::path &FilePath) {
-//   std::ifstream File(FilePath, std::ios::binary);
-//   if (!File)
-//     throw std::runtime_error("Failed to open file: " + FilePath.string());
-//   Name = FilePath.filename().string();
-
-//   const auto FileSize = std::filesystem::file_size(FilePath);
-//   this->Content.clear();
-//   decltype(Content)().swap(Content);
-//   Content = std::string(FileSize, '\0');
-
-//   if (!File.read(Content.data(), FileSize))
-//     throw std::runtime_error("Failed to read file: " + FilePath.string());
-// }
 
 } // namespace diffink

@@ -2,8 +2,8 @@
 #define DIFFINK_UTILS_TEXTDIFF_H
 
 #include "DiffInk/AST/SourceCode.h"
+#include <diff-match-patch-cpp-stl/diff_match_patch.h>
 #include <optional>
-#include <set>
 
 namespace diffink {
 
@@ -16,17 +16,7 @@ struct EditedRange {
 
 using EditSequence = std::vector<EditedRange>;
 
-constexpr std::set<char> makeGeneralClosingSymbols() {
-  return {')', ']', '>', '}'};
-}
-
-EditSequence diffText(const SourceCode &OldCode, const SourceCode &NewCode,
-                      const std::set<char> &ClosingSymbols);
-
-constexpr EditSequence diffText(const SourceCode &OldCode,
-                                const SourceCode &NewCode) {
-  return diffText(OldCode, NewCode, makeGeneralClosingSymbols());
-}
+EditSequence diffText(const SourceCode &OldCode, const SourceCode &NewCode);
 
 void applyEditSequence(const SourceCode &OldCode, const SourceCode &NewCode,
                        TSTree &EditedTree, const EditSequence &Seq);

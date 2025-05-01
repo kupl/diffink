@@ -6,3 +6,6 @@
 
 # build output
 build/
+
+# Log files
+logs/

@@ -3,9 +3,10 @@
 namespace diffink {
 
 std::string HashNode::UTF8Range::toString() const {
-  return "(" + std::to_string(StartPos.row) + "," +
-         std::to_string(StartPos.column) + ")-(" + std::to_string(EndPos.row) +
-         "," + std::to_string(EndPos.column) + ")";
+  return "(" + std::to_string(StartPos.row + 1) + "," +
+         std::to_string(StartPos.column + 1) + ")-(" +
+         std::to_string(EndPos.row + 1) + "," +
+         std::to_string(EndPos.column + 1) + ")";
 }
 
 bool HashNode::build(const SourceCode &Code, TSTreeCursor &Cursor,

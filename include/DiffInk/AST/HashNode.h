@@ -32,7 +32,7 @@ private:
   const UTF8Range PosRange;
 
   std::size_t Height{0};
-  std::size_t Size{0};
+  std::size_t Size{1};
   xxh::hash_t<BitMode> SymbolHash;
   xxh::hash_t<BitMode> ExactHash;
   xxh::hash_t<BitMode> StructuralHash;

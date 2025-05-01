@@ -4,6 +4,7 @@
 #include "DiffInk/TreeDiff/GumTree/GreedyBottomUp.h"
 #include "DiffInk/TreeDiff/GumTree/GreedyTopDown.h"
 #include "DiffInk/TreeDiff/GumTree/Recovery/OptimalRecovery.h"
+#include "DiffInk/TreeDiff/GumTree/Recovery/SimpleRecovery.h"
 #include "DiffInk/TreeDiff/TreeDiff.h"
 
 namespace diffink {
@@ -26,7 +27,13 @@ public:
 std::unique_ptr<TreeDiff::Matcher>
 makeGumtreeOptimal(std::size_t MaxSize = gumtree::DefaultMaxSize,
                    std::size_t MinHeight = gumtree::DefaultMinHeight,
-                   double MinDice = gumtree::DefaultMinDice);
+                   double TopDownMinDice = gumtree::DefaultMinDice,
+                   double BottomUpMinDice = gumtree::DefaultMinDice);
+
+std::unique_ptr<TreeDiff::Matcher>
+makeGumtreeSimple(std::size_t MinHeight = gumtree::DefaultMinHeight,
+                  double TopDownMinDice = gumtree::DefaultMinDice,
+                  double BottomUpMinDice = gumtree::DefaultMinDice);
 
 } // namespace diffink
 

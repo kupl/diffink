@@ -21,9 +21,15 @@ file(GLOB TREE_SITTER_SRC
   externals/tree-sitter-*/src/*.c
   )
 
+# External
+file (GLOB_RECURSE EXTERNAL_SRC
+  externals/diff-match-patch-cpp-stl/*.cpp
+  )
+
 add_executable(${CMAKE_PROJECT_NAME}
   ${SOURCES}
   ${TREE_SITTER_SRC}
+  ${EXTERNAL_SRC}
   )
 
 set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES

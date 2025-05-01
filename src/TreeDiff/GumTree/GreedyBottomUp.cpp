@@ -54,10 +54,17 @@ void GreedyBottomUp::match(TreeDiff &Mapping, VirtualNode *Node) {
 void GreedyBottomUp::match(TreeDiff &Mapping,
                            const std::vector<VirtualNode *> &Old,
                            const std::vector<VirtualNode *> &) {
-
-  for (auto Subtree : Old)
-    Subtree->traversePostOrder(
-        Subtree, [this, &Mapping](VirtualNode *Node) { match(Mapping, Node); });
+  for (auto Subtree : Old) {
+    if (Subtree != Mapping.getOldRoot())
+      Subtree->traversePostOrder(Subtree, [this, &Mapping](VirtualNode *Node) {
+        match(Mapping, Node);
+      });
+    else {
+      Mapping.insertMapping(Subtree, Mapping.getNewRoot());
+      if (Heuristic)
+        Heuristic->match(Mapping, Subtree, Mapping.getNewRoot());
+    }
+  }
 }
 
 } // namespace gumtree

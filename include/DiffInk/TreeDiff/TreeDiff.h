@@ -24,9 +24,12 @@ private:
 private:
   VirtualTree OldTree;
   VirtualTree NewTree;
+
+public:
   std::unordered_map<VirtualNode *, VirtualNode *> OldToNewMapping;
   std::unordered_map<VirtualNode *, VirtualNode *> NewToOldMapping;
 
+private:
   std::unordered_map<const HashNode *, VirtualNode *> VirtualMap;
   std::vector<VirtualNode *> ChangedOldNodes;
   std::vector<VirtualNode *> ChangedNewNodes;
@@ -67,9 +70,15 @@ public:
 
   VirtualNode *findNewToOldMapping(VirtualNode *Node) const;
 
+  VirtualNode *getOldRoot() const noexcept { return OldTree.getRoot(); }
+
+  VirtualNode *getNewRoot() const noexcept { return NewTree.getRoot(); }
+
   bool areContained(VirtualNode *OldNode, VirtualNode *NewNode) const;
 
   void insertMapping(VirtualNode *OldNode, VirtualNode *NewNode);
+
+  void overrideMapping(VirtualNode *OldNode, VirtualNode *NewNode);
 
   static EditScript runDiff(Matcher *Mat, const MerkleTree &Old,
                             const MerkleTree &New);

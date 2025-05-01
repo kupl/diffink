@@ -8,16 +8,7 @@ std::string InsertNode::toString() const {
   std::string Buffer;
   Buffer.append(BigSeperator).append("insert-node\n").append(SmallSeperator);
   Buffer.append(Leaf.toString()).append("\nto\n").append(Parent.toString());
-  Buffer.append("\nat ").append(std::to_string(Index)).push_back('\n');
-  return Buffer;
-}
-
-std::string InsertTree::toString() const {
-  std::string Buffer;
-  Buffer.append(BigSeperator).append("insert-tree\n").append(SmallSeperator);
-  Buffer.append(Subtree.toStringRecursively());
-  Buffer.append("\nto\n").append(Parent.toString());
-  Buffer.append("\nat ").append(std::to_string(Index)).push_back('\n');
+  Buffer.append("\nat ").append(std::to_string(Index + 1)).push_back('\n');
   return Buffer;
 }
 
@@ -28,29 +19,38 @@ std::string DeleteNode::toString() const {
   return Buffer;
 }
 
-std::string DeleteTree::toString() const {
-  std::string Buffer;
-  Buffer.append(BigSeperator).append("delete-tree\n");
-  Buffer.append(SmallSeperator);
-  Buffer.append(Subtree.toStringRecursively()).push_back('\n');
-  return Buffer;
-}
-
 std::string MoveTree::toString() const {
   std::string Buffer;
   Buffer.append(BigSeperator).append("move-tree\n").append(SmallSeperator);
   Buffer.append(Subtree.toStringRecursively()).append("\nto\n");
   Buffer.append(Parent.toString()).append("\nat ");
-  Buffer.append(std::to_string(Index)).push_back('\n');
+  Buffer.append(std::to_string(Index + 1)).push_back('\n');
   return Buffer;
 }
 
 std::string UpdateNode::toString() const {
   std::string Buffer;
   Buffer.append(BigSeperator).append("update-node\n").append(SmallSeperator);
-  Buffer.append(Leaf.toString()).append("\nreplace ");
-  Buffer.append(Leaf.getTextValue()).append(" by ");
-  Buffer.append(UpdatedLeaf.getTextValue()).push_back('\n');
+  Buffer.append(Leaf.toString()).append("\nreplace \"");
+  Buffer.append(Leaf.getTextValue()).append("\" by \"");
+  Buffer.append(UpdatedLeaf.getTextValue()).append("\"\n");
+  return Buffer;
+}
+
+std::string InsertTree::toString() const {
+  std::string Buffer;
+  Buffer.append(BigSeperator).append("insert-tree\n").append(SmallSeperator);
+  Buffer.append(Subtree.toStringRecursively());
+  Buffer.append("\nto\n").append(Parent.toString());
+  Buffer.append("\nat ").append(std::to_string(Index + 1)).push_back('\n');
+  return Buffer;
+}
+
+std::string DeleteTree::toString() const {
+  std::string Buffer;
+  Buffer.append(BigSeperator).append("delete-tree\n");
+  Buffer.append(SmallSeperator);
+  Buffer.append(Subtree.toStringRecursively()).push_back('\n');
   return Buffer;
 }
 
@@ -85,7 +85,7 @@ ExtendedEditScript simplifyEditScript(const EditScript &Script) {
 
   for (const auto &Action : Script) {
     std::visit(
-        [&](auto &&Action) {
+        [&](const auto &Action) {
           using T = std::decay_t<decltype(Action)>;
           if constexpr (std::is_same_v<T, edit_action::InsertNode>)
             InsertedNodes.insert(&Action.Leaf);
@@ -97,7 +97,7 @@ ExtendedEditScript simplifyEditScript(const EditScript &Script) {
 
   for (const auto &Action : Script) {
     std::visit(
-        [&](auto &&Action) {
+        [&](const auto &Action) {
           using T = std::decay_t<decltype(Action)>;
 
           if constexpr (std::is_same_v<T, edit_action::InsertNode>) {

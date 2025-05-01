@@ -137,9 +137,9 @@ void MerkleTree::clear() noexcept {
 bool MerkleTree::parse(TSParser &Parser, const SourceCode &Code) {
   clear();
   RawTree.reset(ts_parser_parse_string(&Parser, nullptr, Code.getContent(),
-                                       Code.getCstringSize()));
+                                       Code.getSize()));
 
-  if (Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code, Ignore))
+  if (Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code, Ignored))
     return true;
   clear();
   return false;
@@ -155,13 +155,14 @@ bool MerkleTree::parseIncrementally(TSParser &Parser, MerkleTree &OldTree,
   auto EditedTree = ts_tree_copy(OldTree.RawTree.get());
   applyEditSequence(OldCode, Code, *EditedTree, Seq);
   RawTree.reset(ts_parser_parse_string(&Parser, EditedTree, Code.getContent(),
-                                       Code.getCstringSize()));
+                                       Code.getSize()));
   if (!(Root =
-            HashNode::build(ts_tree_root_node(RawTree.get()), Code, Ignore))) {
+            HashNode::build(ts_tree_root_node(RawTree.get()), Code, Ignored))) {
     ts_tree_delete(EditedTree);
     clear();
     return false;
   }
+  Root->makeStructuralHashRecursively();
 
   auto OldCursor = ts_tree_cursor_new(ts_tree_root_node(EditedTree));
   auto NewCursor = ts_tree_cursor_new(ts_tree_root_node(RawTree.get()));

@@ -2,82 +2,44 @@
 
 namespace diffink {
 
-EditSequence diffText(const SourceCode &OldCode, const SourceCode &NewCode,
-                      const std::set<char> &ClosingSymbols) {
-  auto OldStr = OldCode.getContent();
-  auto NewStr = NewCode.getContent();
-  // Dynamic programming table for Myers-Diff algorithm
-  std::vector<std::vector<uint32_t>> DistanceTable(
-      OldCode.getContentSize(),
-      std::vector<uint32_t>(NewCode.getContentSize(), 0));
-
-  // Initialize the distance table and the mapping
-  for (uint32_t o{1}; o != OldCode.getContentSize(); ++o)
-    DistanceTable[o][0] = o;
-  for (uint32_t n{1}; n != NewCode.getContentSize(); ++n)
-    DistanceTable[0][n] = n;
-
-  // Fill the distance table
-  for (uint32_t o{1}; o != OldCode.getContentSize(); ++o)
-    for (uint32_t n{1}; n != NewCode.getContentSize(); ++n)
-      DistanceTable[o][n] =
-          OldStr[o - 1] == NewStr[n - 1]
-              ? DistanceTable[o - 1][n - 1]
-              : std::min(DistanceTable[o - 1][n], DistanceTable[o][n - 1]) + 1;
-
+EditSequence diffText(const SourceCode &OldCode, const SourceCode &NewCode) {
   EditSequence Seq;
-  std::optional<EditedRange> CurrentEdit;
+  diff_match_patch<std::string> Diff;
+  Diff.Diff_Timeout = 0.0f;
 
-  for (uint32_t o = OldCode.getCstringSize(), n = NewCode.getCstringSize();
-       o != 0 || n != 0;) {
+  uint32_t OldIter{0}, NewIter{0};
+  std::optional<EditedRange> CurEdit;
 
-    if (o == 0) {
-      if (CurrentEdit)
-        CurrentEdit->NewStartByte = 0;
-      else
-        CurrentEdit = EditedRange{0, 0, 0, n};
-      break;
-    }
-
-    if (n == 0) {
-      if (CurrentEdit)
-        CurrentEdit->OldStartByte = 0;
-      else
-        CurrentEdit = EditedRange{0, o, 0, 0};
-      break;
-    }
-
-    bool IsCommonCharacter = OldStr[o - 1] == NewStr[n - 1] &&
-                             DistanceTable[o][n] == DistanceTable[o - 1][n - 1];
-    bool IsInsertAvaliable = DistanceTable[o][n] == DistanceTable[o][n - 1] + 1;
-    bool IsDeleteAvaliable = DistanceTable[o][n] == DistanceTable[o - 1][n] + 1;
-
-    if (IsCommonCharacter && (!IsInsertAvaliable && !IsDeleteAvaliable ||
-                              ClosingSymbols.contains(OldStr[o - 1]))) {
-      if (CurrentEdit) {
-        Seq.insert(Seq.cbegin(), *CurrentEdit);
-        CurrentEdit.reset();
+  for (const auto &Edit :
+       Diff.diff_main(OldCode.getContent(), NewCode.getContent(), false)) {
+    if (Edit.operation == diff_match_patch<std::string>::Operation::EQUAL) {
+      if (CurEdit) {
+        CurEdit->OldEndByte = OldIter;
+        CurEdit->NewEndByte = NewIter;
+        Seq.push_back(*CurEdit);
+        CurEdit.reset();
       }
-      --o;
-      --n;
-    } else if (IsInsertAvaliable) {
-      if (CurrentEdit)
-        CurrentEdit->NewStartByte = n - 1;
-      else
-        CurrentEdit = EditedRange{o, o, n - 1, n};
-      --n;
-    } else /* IsDeleteAvaliable */ {
-      if (CurrentEdit)
-        CurrentEdit->OldStartByte = o - 1;
-      else
-        CurrentEdit = EditedRange{o - 1, o, n, n};
-      --o;
+      OldIter += Edit.text.length();
+      NewIter += Edit.text.length();
+      continue;
     }
+
+    if (!CurEdit)
+      CurEdit = EditedRange{.OldStartByte = OldIter,
+                            .OldEndByte = OldIter,
+                            .NewStartByte = NewIter,
+                            .NewEndByte = NewIter};
+
+    if (Edit.operation == diff_match_patch<std::string>::Operation::DELETE)
+      CurEdit->OldEndByte = OldIter += Edit.text.length();
+    else
+      CurEdit->NewEndByte = NewIter += Edit.text.length();
   }
 
-  if (CurrentEdit) {
-    Seq.insert(Seq.cbegin(), *CurrentEdit);
-    CurrentEdit.reset();
+  if (CurEdit) {
+    CurEdit->OldEndByte = OldIter;
+    CurEdit->NewEndByte = NewIter;
+    Seq.push_back(*CurEdit);
   }
   return Seq;
 }

@@ -1,5 +1,7 @@
 #include "DiffInk/Api.h"
+#include "DiffInk/Frontend/ScriptExporter.h"
 #include <bitset>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -118,15 +120,15 @@ int main() {
   // OldStr = "Node *const node;";
   // NewStr = "Node *constnode;";
 
-  OldStr = "x = a;\n"
-           "y = b;\n";
-  NewStr = "y = b;\n"
-           "x = a;\n";
+  // OldStr = "x = a;\n"
+  //          "y = b;\n";
+  // NewStr = "y = b;\n"
+  //          "x = a;\n";
 
-  OldStr = "class C {public: void C();};\n"
-           "class C {private: void D();};\n";
-  NewStr = "class C {private: int D();};\n"
-           "class C {public: void C();};\n";
+  // OldStr = "class C {public: void C();};\n"
+  //          "class C {private: void D();};\n";
+  // NewStr = "class C {private: int D();};\n"
+  //          "class C {public: void C();};\n";
 
   // OldStr = "axes_list = [a for a in self.figure.get_axes()\n"
   //          "             if a.patch.contains_point(xy)]\n"
@@ -140,40 +142,63 @@ int main() {
   //          "    if axes_list:\n"
   //          "        axes = cbook._topmost_artist(axes_list)\n";
 
-  // auto OldCode = std::make_unique<diffink::SourceCode>();
-  // OldCode->newContent("Old", OldStr);
-  // auto NewCode = std::make_unique<diffink::SourceCode>();
-  // NewCode->newContent("New", NewStr);
-  // auto Diff = diffink::diffText(*OldCode, *NewCode);
+  // std::cout << "OldStr:\n" << OldStr << "\n";
+  // std::cout << "NewStr:\n" << NewStr << "\n";
+  // diffink::SourceCode OldCode(std::move(OldStr));
+  // diffink::SourceCode NewCode(std::move(NewStr));
 
-  diffink::SourceCode OldCode(read("example/java/old/Test.java"));
-  diffink::SourceCode NewCode(read("example/java/new/Test.java"));
+  diffink::SourceCode OldCode(
+      read("/home/donguk/diffink_benchmark/d4j/lang_30_buggy/src/main/java/org/"
+           "apache/commons/lang3/StringUtils.java"));
+  diffink::SourceCode NewCode(
+      read("/home/donguk/diffink_benchmark/d4j/lang_30_fixed/src/main/java/org/"
+           "apache/commons/lang3/StringUtils.java"));
+
   auto Diff = diffink::diffText(OldCode, NewCode);
+
+  // for (const auto &Edit : Diff) {
+  //   std::cout << OldCode.getPosition(Edit.OldStartByte).row << ","
+  //             << OldCode.getPosition(Edit.OldStartByte).column << " "
+  //             << OldCode.getPosition(Edit.OldEndByte).row << ","
+  //             << OldCode.getPosition(Edit.OldEndByte).column << "\n";
+  // }
+  // return 0;
 
   diffink::SmartParser Parser(tree_sitter_java);
   diffink::MerkleTree OldTree, NewTree;
-  OldTree.setIgnore({";"});
-  NewTree.setIgnore({";"});
   OldTree.parse(Parser.get(), OldCode);
   NewTree.parseIncrementally(Parser.get(), OldTree, OldCode, NewCode, Diff);
+  // NewTree.parse(Parser.get(), NewCode);
 
-  std::cout << "OldTree:\n";
-  std::cout << OldTree.getRoot().toStringRecursively() << "\n";
-  std::cout << "NewTree:\n";
-  std::cout << NewTree.getRoot().toStringRecursively() << "\n\n\n";
+  // std::cout << "OldTree:\n";
+  // std::cout << OldTree.getRoot().toStringRecursively() << "\n";
+  // std::cout << "NewTree:\n";
+  // std::cout << NewTree.getRoot().toStringRecursively() << "\n\n\n";
 
-  auto TestMatcher = diffink::makeGumtreeOptimal();
+  /**/
+  auto Start = std::chrono::steady_clock::now();
+  /**/
 
-  // auto Script =
-  // diffink::TreeDiff::runDiffInk(TestMatcher.get(), OldTree, NewTree);
-  auto Script = diffink::TreeDiff::runDiff(TestMatcher.get(), OldTree, NewTree);
-
+  auto TestMatcher =
+      diffink::makeGumtreeOptimal(std::numeric_limits<std::size_t>::max());
+  auto Script =
+      diffink::TreeDiff::runDiffInk(TestMatcher.get(), OldTree, NewTree);
   auto ExScript = diffink::simplifyEditScript(Script);
+
+  /**/
+  auto End = std::chrono::steady_clock::now();
+  auto Time = std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
+                  .count();
+  std::cout << "Running Time: " << Time / 1000 << "." << Time % 1000 << "ms\n";
+  /**/
 
   std::cout << Script.size() << "\n";
   std::cout << ExScript.size() << "\n";
-  for (const auto &Edit : ExScript) {
-    std::visit([](const auto &Action) { std::cout << Action.toString(); },
-               Edit);
-  }
+
+  diffink::ScriptExporter Exporter(ExScript);
+  const auto [OldHTML, NewHTML] = Exporter.exportAsHTML(OldCode, NewCode);
+  std::ofstream OldFile("logs/Old.html");
+  std::ofstream NewFile("logs/New.html");
+  OldFile << OldHTML;
+  NewFile << NewHTML;
 }
