@@ -1,8 +1,6 @@
 #include "DiffInk/TreeDiff/GumTree/DiceSimilarity.h"
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 double computeDiceSimilarity(TreeDiff &Mapping,
                              const std::unordered_set<VirtualNode *> &Old,
@@ -31,6 +29,4 @@ double computeDiceSimilarity(TreeDiff &Mapping,
          (Old.size() + New->Original.getSize() - 1);
 }
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree

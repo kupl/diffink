@@ -9,8 +9,8 @@ void MerkleTree::identifyChange(MerkleTree &OldTree, Iterator Iters) {
   auto insertStructuralChange =
       [](MerkleTree &Tree, const HashNode &Iter,
          std::list<HashNode>::const_iterator Child) -> void {
-    Tree.ChangedNodes.insert(&*Child);
-    Tree.HasChangedChild.insert(&Iter);
+    Tree.UncommonNodes.insert(&*Child);
+    Tree.HasUncommonChild.insert(&Iter);
   };
 
   if (HasEditedChild && HasNewChild) {
@@ -22,29 +22,29 @@ void MerkleTree::identifyChange(MerkleTree &OldTree, Iterator Iters) {
 
       if (OldHashChild == OldHashEnd) {
         for (; NewHashChild != NewHashEnd; ++NewHashChild)
-          ChangedNodes.insert(&*NewHashChild);
-        HasChangedChild.insert(&Iters.NewHashIter);
+          UncommonNodes.insert(&*NewHashChild);
+        HasUncommonChild.insert(&Iters.NewHashIter);
         break;
       }
 
       if (NewHashChild == NewHashEnd) {
         for (; OldHashChild != OldHashEnd; ++OldHashChild)
-          OldTree.ChangedNodes.insert(&*OldHashChild);
-        OldTree.HasChangedChild.insert(&Iters.OldHashIter);
+          OldTree.UncommonNodes.insert(&*OldHashChild);
+        OldTree.HasUncommonChild.insert(&Iters.OldHashIter);
         break;
       }
 
       switch (compareNodes(ts_tree_cursor_current_node(&Iters.OldCursor),
                            ts_tree_cursor_current_node(&Iters.NewCursor))) {
       case NodeComp::Equal:
-        if (OldHashChild->getSymbol() == NewHashChild->getSymbol()) {
+        if (OldHashChild->getType() == NewHashChild->getType()) {
           Mapping.emplace_back(&*OldHashChild, &*NewHashChild);
 
           if (!HashNode::isExactlyEqual(*OldHashChild, *NewHashChild)) {
             identifyChange(OldTree, {*OldHashChild, Iters.OldCursor,
                                      *NewHashChild, Iters.NewCursor});
-            OldTree.HasChangedChild.insert(&Iters.OldHashIter);
-            HasChangedChild.insert(&Iters.NewHashIter);
+            OldTree.HasUncommonChild.insert(&Iters.OldHashIter);
+            HasUncommonChild.insert(&Iters.NewHashIter);
           }
         }
 
@@ -98,40 +98,40 @@ void MerkleTree::identifyChange(MerkleTree &OldTree, Iterator Iters) {
 
   else if (HasEditedChild) {
     for (auto &Child : Iters.OldHashIter.getChildren())
-      OldTree.ChangedNodes.insert(&Child);
-    OldTree.HasChangedChild.insert(&Iters.OldHashIter);
+      OldTree.UncommonNodes.insert(&Child);
+    OldTree.HasUncommonChild.insert(&Iters.OldHashIter);
     ts_tree_cursor_goto_parent(&Iters.OldCursor);
   }
 
   else /* HasNewChild */ {
     for (auto &Child : Iters.NewHashIter.getChildren())
-      ChangedNodes.insert(&Child);
-    HasChangedChild.insert(&Iters.NewHashIter);
+      UncommonNodes.insert(&Child);
+    HasUncommonChild.insert(&Iters.NewHashIter);
     ts_tree_cursor_goto_parent(&Iters.NewCursor);
   }
 }
 
-void MerkleTree::clearChanges() noexcept {
+void MerkleTree::clearMapping() noexcept {
   Mapping.clear();
   decltype(Mapping)().swap(Mapping);
-  ChangedNodes.clear();
-  decltype(ChangedNodes)().swap(ChangedNodes);
-  HasChangedChild.clear();
-  decltype(HasChangedChild)().swap(HasChangedChild);
+  UncommonNodes.clear();
+  decltype(UncommonNodes)().swap(UncommonNodes);
+  HasUncommonChild.clear();
+  decltype(HasUncommonChild)().swap(HasUncommonChild);
 }
 
 void MerkleTree::swap(MerkleTree &Rhs) noexcept {
   Root.swap(Rhs.Root);
   RawTree.swap(Rhs.RawTree);
   Mapping.swap(Rhs.Mapping);
-  ChangedNodes.swap(Rhs.ChangedNodes);
-  HasChangedChild.swap(Rhs.HasChangedChild);
+  UncommonNodes.swap(Rhs.UncommonNodes);
+  HasUncommonChild.swap(Rhs.HasUncommonChild);
 }
 
 void MerkleTree::clear() noexcept {
   Root.reset();
   RawTree.reset();
-  clearChanges();
+  clearMapping();
 }
 
 bool MerkleTree::parse(TSParser &Parser, const SourceCode &Code) {
@@ -139,7 +139,7 @@ bool MerkleTree::parse(TSParser &Parser, const SourceCode &Code) {
   RawTree.reset(ts_parser_parse_string(&Parser, nullptr, Code.getContent(),
                                        Code.getSize()));
 
-  if (Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code, Ignored))
+  if (Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code, Config))
     return true;
   clear();
   return false;
@@ -150,14 +150,14 @@ bool MerkleTree::parseIncrementally(TSParser &Parser, MerkleTree &OldTree,
                                     const SourceCode &Code,
                                     const EditSequence &Seq) {
   clear();
-  OldTree.clearChanges();
+  OldTree.clearMapping();
 
   auto EditedTree = ts_tree_copy(OldTree.RawTree.get());
   applyEditSequence(OldCode, Code, *EditedTree, Seq);
   RawTree.reset(ts_parser_parse_string(&Parser, EditedTree, Code.getContent(),
                                        Code.getSize()));
   if (!(Root =
-            HashNode::build(ts_tree_root_node(RawTree.get()), Code, Ignored))) {
+            HashNode::build(ts_tree_root_node(RawTree.get()), Code, Config))) {
     ts_tree_delete(EditedTree);
     clear();
     return false;

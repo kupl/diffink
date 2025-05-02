@@ -179,10 +179,8 @@ int main() {
   auto Start = std::chrono::steady_clock::now();
   /**/
 
-  auto TestMatcher =
-      diffink::makeGumtreeOptimal(std::numeric_limits<std::size_t>::max());
-  auto Script =
-      diffink::TreeDiff::runDiffInk(TestMatcher.get(), OldTree, NewTree);
+  auto TestMatcher = diffink::makeGumtreeSimple();
+  auto Script = diffink::TreeDiff::runDiff(TestMatcher.get(), OldTree, NewTree);
   auto ExScript = diffink::simplifyEditScript(Script);
 
   /**/
@@ -195,7 +193,7 @@ int main() {
   std::cout << Script.size() << "\n";
   std::cout << ExScript.size() << "\n";
 
-  diffink::ScriptExporter Exporter(ExScript);
+  diffink::frontend::ScriptExporter Exporter(ExScript);
   const auto [OldHTML, NewHTML] = Exporter.exportAsHTML(OldCode, NewCode);
   std::ofstream OldFile("logs/Old.html");
   std::ofstream NewFile("logs/New.html");

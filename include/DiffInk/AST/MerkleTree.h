@@ -11,14 +11,11 @@ class MerkleTree {
 private:
   std::unique_ptr<HashNode> Root;
   std::unique_ptr<TSTree, decltype(&ts_tree_delete)> RawTree;
-
-  std::unordered_set<std::string> Flattened;
-  std::unordered_set<std::string> Aliased;
-  std::unordered_set<std::string> Ignored;
+  HashNode::BuildConfig Config;
 
   std::vector<std::pair<const HashNode *, const HashNode *>> Mapping;
-  std::unordered_set<const HashNode *> ChangedNodes;
-  std::unordered_set<const HashNode *> HasChangedChild;
+  std::unordered_set<const HashNode *> UncommonNodes;
+  std::unordered_set<const HashNode *> HasUncommonChild;
 
 private:
   struct Iterator {
@@ -30,7 +27,7 @@ private:
 
   void identifyChange(MerkleTree &OldTree, Iterator Iters);
 
-  void clearChanges() noexcept;
+  void clearMapping() noexcept;
 
 public:
   MerkleTree() noexcept : RawTree(nullptr, ts_tree_delete) {}
@@ -47,20 +44,28 @@ public:
                           const SourceCode &OldCode, const SourceCode &Code,
                           const EditSequence &Seq);
 
-  void setIgnored(const std::unordered_set<std::string> &Ignored) noexcept {
-    this->Ignored = Ignored;
+  void setFlattened(const std::unordered_set<std::string> &Flattened) {
+    Config.Flattened = Flattened;
+  }
+
+  void setAliased(const std::unordered_set<std::string> &Aliased) {
+    Config.Aliased = Aliased;
+  }
+
+  void setIgnored(const std::unordered_set<std::string> &Ignored) {
+    Config.Ignored = Ignored;
   }
 
   const HashNode &getRoot() const noexcept { return *Root; }
 
   const decltype(Mapping) &getMapping() const noexcept { return Mapping; }
 
-  bool isChanged(const HashNode &Node) const noexcept {
-    return ChangedNodes.contains(&Node);
+  bool isUncommon(const HashNode &Node) const {
+    return UncommonNodes.contains(&Node);
   }
 
-  bool hasChangedChild(const HashNode &Node) const noexcept {
-    return HasChangedChild.contains(&Node);
+  bool hasUncommonChild(const HashNode &Node) const {
+    return HasUncommonChild.contains(&Node);
   }
 };
 

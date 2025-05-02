@@ -1,6 +1,6 @@
 #include "DiffInk/Frontend/ScriptExporter.h"
 
-namespace diffink {
+namespace diffink::frontend {
 
 std::string ScriptExporter::exportAsString() const {
   std::string Buffer;
@@ -159,4 +159,4 @@ ScriptExporter::exportAsHTML(const SourceCode &OldSrc,
   return {OldBuf, NewBuf};
 }
 
-} // namespace diffink
+} // namespace diffink::frontend

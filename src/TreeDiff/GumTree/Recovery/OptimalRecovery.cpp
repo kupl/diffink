@@ -1,12 +1,10 @@
 #include "DiffInk/TreeDiff/GumTree/Recovery/OptimalRecovery.h"
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 int OptimalRecovery::computeUpdateCost(VirtualNode *Left,
                                        VirtualNode *Right) const {
-  if (Left->Original.getSymbol() != Right->Original.getSymbol())
+  if (Left->Original.getType() != Right->Original.getType())
     return std::numeric_limits<int>::max();
   return HashNode::isExactlyEqual(Left->Original, Right->Original) ? 0 : 1;
 }
@@ -124,8 +122,8 @@ void OptimalRecovery::match(TreeDiff &Mapping, VirtualNode *Old,
 
       else {
         if (LldOld(Row) == LldOld(LastRow) && LldNew(Col) == LldNew(LastCol)) {
-          if (OldPostOrder[Row - 1]->Original.getSymbol() ==
-              NewPostOrder[Col - 1]->Original.getSymbol()) {
+          if (OldPostOrder[Row - 1]->Original.getType() ==
+              NewPostOrder[Col - 1]->Original.getType()) {
             tryMapping(Mapping, OldPostOrder[Row - 1], NewPostOrder[Col - 1]);
             --Row;
             --Col;
@@ -142,6 +140,4 @@ void OptimalRecovery::match(TreeDiff &Mapping, VirtualNode *Old,
   }
 }
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree

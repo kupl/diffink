@@ -1,8 +1,6 @@
 #include "DiffInk/TreeDiff/GumTree/GreedyBottomUp.h"
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 void GreedyBottomUp::match(TreeDiff &Mapping, VirtualNode *Node) {
   if (Node->Original.isLeaf() || Mapping.findOldToNewMapping(Node))
@@ -24,7 +22,7 @@ void GreedyBottomUp::match(TreeDiff &Mapping, VirtualNode *Node) {
            Seed->Parent != nullptr && !Visited.contains(Seed);
            Seed = Seed->Parent) {
         Visited.insert(Seed);
-        if (Seed->Original.getSymbol() == Node->Original.getSymbol() &&
+        if (Seed->Original.getType() == Node->Original.getType() &&
             !Mapping.findNewToOldMapping(Seed))
           Candidates.push_back(Seed);
       }
@@ -67,6 +65,4 @@ void GreedyBottomUp::match(TreeDiff &Mapping,
   }
 }
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree

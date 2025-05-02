@@ -3,9 +3,7 @@
 
 #include <cstddef>
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 constexpr std::size_t DefaultMinHeight{1};
 
@@ -13,8 +11,6 @@ constexpr double DefaultMinDice{0.5};
 
 constexpr std::size_t DefaultMaxSize{1000};
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree
 
 #endif // DIFFINK_TREEDIFF_GUMTREE_HYPERPARAMETERS_H

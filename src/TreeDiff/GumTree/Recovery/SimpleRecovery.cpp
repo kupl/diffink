@@ -1,8 +1,6 @@
 #include "DiffInk/TreeDiff/GumTree/Recovery/SimpleRecovery.h"
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 template <class Comparator>
 void SimpleRecovery::matchLcs(TreeDiff &Mapping, VirtualNode *Old,
@@ -51,20 +49,20 @@ void SimpleRecovery::matchLcs(TreeDiff &Mapping, VirtualNode *Old,
 
 void SimpleRecovery::matchUnique(TreeDiff &Mapping, VirtualNode *Old,
                                  VirtualNode *New) {
-  std::unordered_set<TSSymbol> Keys;
-  std::unordered_map<TSSymbol, std::vector<VirtualNode *>> OldTypes;
-  std::unordered_map<TSSymbol, std::vector<VirtualNode *>> NewTypes;
+  std::unordered_set<std::string> Keys;
+  std::unordered_map<std::string, std::vector<VirtualNode *>> OldTypes;
+  std::unordered_map<std::string, std::vector<VirtualNode *>> NewTypes;
 
   for (auto Child : Old->Children)
     if (!Mapping.findOldToNewMapping(Child)) {
-      OldTypes[Child->Original.getSymbol()].push_back(Child);
-      Keys.insert(Child->Original.getSymbol());
+      OldTypes[Child->Original.getType()].push_back(Child);
+      Keys.insert(Child->Original.getType());
     }
 
   for (auto Child : New->Children)
     if (!Mapping.findNewToOldMapping(Child)) {
-      NewTypes[Child->Original.getSymbol()].push_back(Child);
-      Keys.insert(Child->Original.getSymbol());
+      NewTypes[Child->Original.getType()].push_back(Child);
+      Keys.insert(Child->Original.getType());
     }
 
   for (auto Key : Keys) {
@@ -89,6 +87,4 @@ void SimpleRecovery::match(TreeDiff &Mapping, VirtualNode *Old,
   matchUnique(Mapping, Old, New);
 }
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree

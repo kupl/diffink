@@ -9,3 +9,6 @@ build/
 
 # Log files
 logs/
+
+# Output files
+reports/

@@ -2,7 +2,7 @@
 #define DIFFINK_UTILS_TEXTDIFF_H
 
 #include "DiffInk/AST/SourceCode.h"
-#include <diff-match-patch-cpp-stl/diff_match_patch.h>
+#include <diff_match_patch.h>
 #include <optional>
 
 namespace diffink {

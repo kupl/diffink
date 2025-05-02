@@ -15,16 +15,16 @@ void TreeDiff::matchDiffInk(Matcher *Mat, const MerkleTree &Old,
   NewTree.setRoot(NewTree.pushBack(New.getRoot(), nullptr));
   VirtualMap.reserve(New.getMapping().size() * 2);
 
-  build(Old, OldTree, ChangedOldNodes, Old.getRoot(), OldTree.getRoot());
-  build(New, NewTree, ChangedNewNodes, New.getRoot(), NewTree.getRoot());
+  build(Old, OldTree, UncommonOldNodes, Old.getRoot(), OldTree.getRoot());
+  build(New, NewTree, UncommonNewNodes, New.getRoot(), NewTree.getRoot());
 
   earlyMatching(New);
 
-  for (auto Node : ChangedOldNodes)
+  for (auto Node : UncommonOldNodes)
     OldTree.buildSubtree(Node);
-  for (auto Node : ChangedNewNodes)
+  for (auto Node : UncommonNewNodes)
     NewTree.buildSubtree(Node);
-  Mat->match(*this, ChangedOldNodes, ChangedNewNodes);
+  Mat->match(*this, UncommonOldNodes, UncommonNewNodes);
 }
 
 void TreeDiff::earlyMatching(const MerkleTree &New) {
@@ -44,7 +44,7 @@ void TreeDiff::earlyMatching(const MerkleTree &New) {
             NewNodeCopy->Parent);
   }
 
-  for (auto Node : ChangedNewNodes)
+  for (auto Node : UncommonNewNodes)
     if (VirtualNode ::isEqual(Node->Parent, findNewToOldMapping(Node->Parent)))
       CrossMappingCandidates[Node->Parent->VirtualHeight].insert(Node->Parent);
 
@@ -84,7 +84,7 @@ void TreeDiff::earlyMatching(const MerkleTree &New) {
     }
   }
 
-  for (auto Node : ChangedNewNodes) {
+  for (auto Node : UncommonNewNodes) {
     auto ParentPartner = findNewToOldMapping(Node->Parent);
     std::size_t Index{0};
     for (; Index != ParentPartner->Children.size(); ++Index)
@@ -115,7 +115,7 @@ void TreeDiff::build(const MerkleTree &OriginalTree, VirtualTree &TreeCopy,
                      const HashNode &OriginalNode, VirtualNode *NodeCopy) {
   NodeCopy->VirtualHeight = 0;
   if (OriginalNode.getChildren().empty()) {
-    NodeCopy->VirtualHash = OriginalNode.getSymbolHash();
+    NodeCopy->VirtualHash = OriginalNode.getTypeHash();
     return;
   }
   NodeCopy->VirtualHeight = 1;
@@ -126,15 +126,15 @@ void TreeDiff::build(const MerkleTree &OriginalTree, VirtualTree &TreeCopy,
   for (auto &Child : OriginalNode.getChildren()) {
     auto Temp = TreeCopy.pushBack(Child, NodeCopy);
 
-    if (OriginalTree.isChanged(Child)) {
-      Temp->VirtualHash = ChangedSymbolHash;
+    if (OriginalTree.isUncommon(Child)) {
+      Temp->VirtualHash = UncommonSymbolHash;
       ChangeSet.push_back(Temp);
-      Hashes.push_back(ChangedSymbolHash);
+      Hashes.push_back(UncommonSymbolHash);
     }
 
     else {
       VirtualMap.emplace(&Child, Temp);
-      if (OriginalTree.hasChangedChild(Child)) {
+      if (OriginalTree.hasUncommonChild(Child)) {
         build(OriginalTree, TreeCopy, ChangeSet, Child, Temp);
         Hashes.push_back(Temp->VirtualHash);
         NodeCopy->VirtualHeight =
@@ -147,7 +147,7 @@ void TreeDiff::build(const MerkleTree &OriginalTree, VirtualTree &TreeCopy,
   }
 
   NodeCopy->VirtualHash = xxh::xxhash3<BitMode>(
-      {OriginalNode.getSymbolHash(), xxh::xxhash3<BitMode>(Hashes)});
+      {OriginalNode.getTypeHash(), xxh::xxhash3<BitMode>(Hashes)});
 }
 
 EditScript TreeDiff::makeEditScript() {

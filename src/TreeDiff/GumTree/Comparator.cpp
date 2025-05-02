@@ -1,8 +1,6 @@
 #include "DiffInk/TreeDiff/GumTree/Comparator.h"
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 const std::unordered_set<VirtualNode *> &
 Comparator::makeSiblings(VirtualNode *Node) {
@@ -121,6 +119,4 @@ bool Comparator::operator()(NodePair Left, NodePair Right) {
   }
 }
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree

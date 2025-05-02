@@ -3,9 +3,7 @@
 
 #include "DiffInk/TreeDiff/GumTree/DiceSimilarity.h"
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 class Comparator {
 private:
@@ -47,8 +45,6 @@ public:
   bool operator()(NodePair Left, NodePair Right);
 };
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree
 
 #endif // DIFFINK_TREEDIFF_GUMTREE_COMPARATOR_H

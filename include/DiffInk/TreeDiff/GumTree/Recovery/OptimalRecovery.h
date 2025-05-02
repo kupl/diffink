@@ -5,9 +5,7 @@
 #include <limits>
 #include <stack>
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 class OptimalRecovery : public GreedyBottomUp::Recovery {
 private:
@@ -25,8 +23,6 @@ public:
   void match(TreeDiff &Mapping, VirtualNode *Old, VirtualNode *New) final;
 };
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree
 
 #endif // DIFFINK_TREEDIFF_GUMTREE_OPTIMALRECOVERY_H

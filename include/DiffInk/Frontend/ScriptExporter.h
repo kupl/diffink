@@ -4,7 +4,7 @@
 #include "DiffInk/TreeDiff/EditAction.h"
 #include <nlohmann/json.hpp>
 
-namespace diffink {
+namespace diffink::frontend {
 
 class ScriptExporter {
 private:
@@ -24,6 +24,6 @@ public:
   std::string exportAsJSON() const;
 };
 
-} // namespace diffink
+} // namespace diffink::frontend
 
 #endif // DIFFINK_FRONTEND_SCRIPTEXPORTER_H

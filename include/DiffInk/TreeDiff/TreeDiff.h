@@ -31,16 +31,16 @@ public:
 
 private:
   std::unordered_map<const HashNode *, VirtualNode *> VirtualMap;
-  std::vector<VirtualNode *> ChangedOldNodes;
-  std::vector<VirtualNode *> ChangedNewNodes;
+  std::vector<VirtualNode *> UncommonOldNodes;
+  std::vector<VirtualNode *> UncommonNewNodes;
 
-  const TSSymbol ChangedSymbol{static_cast<TSSymbol>(-1)};
-  const xxh::hash_t<BitMode> ChangedSymbolHash;
+  const TSSymbol UncommonSymbol{static_cast<TSSymbol>(-1)};
+  const xxh::hash_t<BitMode> UncommonSymbolHash;
 
 private:
   TreeDiff() noexcept
-      : ChangedSymbolHash{
-            xxh::xxhash3<BitMode>(&ChangedSymbol, sizeof(ChangedSymbol))} {}
+      : UncommonSymbolHash{
+            xxh::xxhash3<BitMode>(&UncommonSymbol, sizeof(UncommonSymbol))} {}
 
   ~TreeDiff() = default;
 

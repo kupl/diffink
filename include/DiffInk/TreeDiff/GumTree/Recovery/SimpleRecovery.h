@@ -3,9 +3,7 @@
 
 #include "DiffInk/TreeDiff/GumTree/GreedyBottomUp.h"
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 class SimpleRecovery : public GreedyBottomUp::Recovery {
 private:
@@ -21,8 +19,6 @@ public:
   void match(TreeDiff &Mapping, VirtualNode *Old, VirtualNode *New) final;
 };
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree
 
 #endif // DIFFINK_TREEDIFF_GUMTREE_SIMPLERECOVERY_H

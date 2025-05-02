@@ -3,9 +3,7 @@
 
 #include "DiffInk/TreeDiff/TreeDiff.h"
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 double computeDiceSimilarity(TreeDiff &Mapping,
                              const std::unordered_set<VirtualNode *> &Old,
@@ -15,8 +13,6 @@ double computeDiceSimilarity(TreeDiff &Mapping,
                              const std::unordered_set<VirtualNode *> &Old,
                              VirtualNode *New);
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree
 
 #endif // DIFFINK_TREEDIFF_DICESIMILARITY_H

@@ -6,9 +6,7 @@
 #include "DiffInk/TreeDiff/TreeDiff.h"
 #include <map>
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 class GreedyTopDown : public TreeDiff::Matcher {
 private:
@@ -25,8 +23,6 @@ public:
              const std::vector<VirtualNode *> &New) final;
 };
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree
 
 #endif // DIFFINK_TREEDIFF_GUMTREE_GREEDYTOPDOWN_H

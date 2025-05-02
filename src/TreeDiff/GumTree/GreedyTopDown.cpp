@@ -1,8 +1,6 @@
 #include "DiffInk/TreeDiff/GumTree/GreedyTopDown.h"
 
-namespace diffink {
-
-namespace gumtree {
+namespace diffink::gumtree {
 
 void GreedyTopDown::match(TreeDiff &Mapping,
                           const std::vector<VirtualNode *> &Old,
@@ -101,6 +99,4 @@ void GreedyTopDown::match(TreeDiff &Mapping,
     }
 }
 
-} // namespace gumtree
-
-} // namespace diffink
+} // namespace diffink::gumtree
