@@ -32,8 +32,8 @@ std::string UpdateNode::toString() const {
   std::string Buffer;
   Buffer.append(BigSeperator).append("update-node\n").append(SmallSeperator);
   Buffer.append(Leaf.toString()).append("\nreplace \"");
-  Buffer.append(Leaf.getTextValue()).append("\" by \"");
-  Buffer.append(UpdatedLeaf.getTextValue()).append("\"\n");
+  Buffer.append(Leaf.getLabel()).append("\" by \"");
+  Buffer.append(UpdatedLeaf.getLabel()).append("\"\n");
   return Buffer;
 }
 

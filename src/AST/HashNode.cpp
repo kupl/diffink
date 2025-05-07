@@ -49,20 +49,20 @@ HashNode::HashNode(const TSNode &RawNode, std::string &&Type,
                    const SourceCode &Code, bool IsLeaf) noexcept
     : Type(std::move(Type)),
       ByteRange{ts_node_start_byte(RawNode), ts_node_end_byte(RawNode)},
-      Value(IsLeaf ? Code.getSubstring(ts_node_start_byte(RawNode),
+      Label(IsLeaf ? Code.getSubstring(ts_node_start_byte(RawNode),
                                        ts_node_end_byte(RawNode))
                    : ""),
       PosRange(UTF8Range{Code.getUTF8Position(ts_node_start_byte(RawNode)),
                          Code.getUTF8Position(ts_node_end_byte(RawNode))}) {}
 
 void HashNode::makeMetadataRecursively() {
-  TypeHash = xxh::xxhash3<BitMode>(Type);
+  TypeHash = xxhString(Type);
   if (Children.empty()) {
-    ExactHash = xxh::xxhash3<BitMode>({TypeHash, xxh::xxhash3<BitMode>(Value)});
+    ExactHash = xxhVector({TypeHash, xxhString(Label)});
     return;
   }
 
-  std::vector<xxh::hash_t<BitMode>> ExactHashes;
+  std::vector<XXH128_hash_t> ExactHashes;
   ExactHashes.reserve(Children.size());
 
   for (auto &Child : Children) {
@@ -71,8 +71,7 @@ void HashNode::makeMetadataRecursively() {
     Height = std::max(Height, Child.Height + 1);
     Size += Child.Size;
   }
-  ExactHash =
-      xxh::xxhash3<BitMode>({TypeHash, xxh::xxhash3<BitMode>(ExactHashes)});
+  ExactHash = xxhVector({TypeHash, xxhVector(ExactHashes)});
 }
 
 void HashNode::makePostOrder(std::vector<const HashNode *> &PostOrder,
@@ -88,15 +87,14 @@ void HashNode::makeStructuralHashRecursively() {
     return;
   }
 
-  std::vector<xxh::hash_t<BitMode>> StructuralHashes;
+  std::vector<XXH128_hash_t> StructuralHashes;
   StructuralHashes.reserve(Children.size());
 
   for (auto &Child : Children) {
     Child.makeStructuralHashRecursively();
     StructuralHashes.push_back(Child.StructuralHash);
   }
-  StructuralHash = xxh::xxhash3<BitMode>(
-      {TypeHash, xxh::xxhash3<BitMode>(StructuralHashes)});
+  StructuralHash = xxhVector({TypeHash, xxhVector(StructuralHashes)});
 }
 
 std::vector<const HashNode *> HashNode::makePostOrder() const {
@@ -109,8 +107,8 @@ std::vector<const HashNode *> HashNode::makePostOrder() const {
 std::string HashNode::toString() const {
   std::string Buffer;
   Buffer.append(Type);
-  if (!Value.empty())
-    Buffer.append(": \"").append(Value).push_back('"');
+  if (!Label.empty())
+    Buffer.append(": \"").append(Label).push_back('"');
   Buffer.append(" ").append(PosRange.toString());
   return Buffer;
 }

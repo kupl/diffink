@@ -120,7 +120,7 @@ void TreeDiff::build(const MerkleTree &OriginalTree, VirtualTree &TreeCopy,
   }
   NodeCopy->VirtualHeight = 1;
 
-  std::vector<xxh::hash_t<BitMode>> Hashes;
+  std::vector<XXH128_hash_t> Hashes;
   Hashes.reserve(OriginalNode.getChildren().size());
 
   for (auto &Child : OriginalNode.getChildren()) {
@@ -146,8 +146,8 @@ void TreeDiff::build(const MerkleTree &OriginalTree, VirtualTree &TreeCopy,
     }
   }
 
-  NodeCopy->VirtualHash = xxh::xxhash3<BitMode>(
-      {OriginalNode.getTypeHash(), xxh::xxhash3<BitMode>(Hashes)});
+  NodeCopy->VirtualHash =
+      xxhVector({OriginalNode.getTypeHash(), xxhVector(Hashes)});
 }
 
 EditScript TreeDiff::makeEditScript() {
@@ -174,7 +174,7 @@ EditScript TreeDiff::makeEditScript() {
     }
 
     else if (Node->Parent) {
-      if (Partner->Original.getTextValue() != Node->Original.getTextValue())
+      if (Partner->Original.getLabel() != Node->Original.getLabel())
         Script.emplace_back(edit_action::UpdateNode{
             .Leaf = Partner->Original, .UpdatedLeaf = Node->Original});
 

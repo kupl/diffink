@@ -7,8 +7,6 @@
 # build output
 build/
 
-# Log files
-logs/
-
 # Output files
-reports/
+diffink_log
+diffink_report/

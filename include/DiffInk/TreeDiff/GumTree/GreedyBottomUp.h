@@ -13,6 +13,7 @@ public:
   public:
     virtual void match(TreeDiff &Mapping, VirtualNode *Old,
                        VirtualNode *New) = 0;
+    virtual ~Recovery() = default;
   };
 
 private:

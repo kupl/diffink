@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.20.0)
 project(diffink)
 
-# # Compiler
-# set(CMAKE_C_COMPILER gcc)
-# set(CMAKE_CXX_COMPILER g++)
+# Compiler
+set(CMAKE_C_COMPILER gcc)
+set(CMAKE_CXX_COMPILER g++)
 
 # Compiler config
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -34,17 +34,23 @@ option(LANG_TYPESCRIPT "Enable TypeScript language support" OFF)
 file(GLOB_RECURSE SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
-message(src)
 
-# External: tree-sitter
-file(GLOB TREE_SITTER_SRC
+# External
+file(GLOB EXTERNAL_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/externals/tree-sitter/lib/src/lib.c
   ${CMAKE_CURRENT_SOURCE_DIR}/externals/tree-sitter-*/src/*.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/externals/xxHash/*.c
+)
+
+# Fronted
+file(GLOB FRONTEND_SRC
+  ${CMAKE_CURRENT_SOURCE_DIR}/frontend/src/*.cpp
 )
 
 add_executable(${CMAKE_PROJECT_NAME}
   ${SOURCES}
-  ${TREE_SITTER_SRC}
+  ${EXTERNAL_SRC}
+  ${FRONTEND_SRC}
 )
 
 # Compiler flags
@@ -126,20 +132,16 @@ set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-# Include
-include_directories(
-  include
-)
-
-# External: tree-sitter family
+# External: tree-sitter
 file(GLOB TREE_SITTER_BINDINGS_C
   ${CMAKE_CURRENT_SOURCE_DIR}/externals/tree-sitter-*/bindings/c
 )
 
-# Externals
 include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/externals
   ${CMAKE_CURRENT_SOURCE_DIR}/externals/tree-sitter/lib/include
   ${TREE_SITTER_BINDINGS_C}
+  ${CMAKE_CURRENT_SOURCE_DIR}/frontend/include
 )
 

@@ -29,14 +29,14 @@ void SourceCode::setByteMap() {
   decltype(ByteToUTF8Pos)().swap(ByteToUTF8Pos);
   ByteToUTF8Pos.reserve(getSize());
 
-  std::string::size_type Row{0}, Col{0};
-  std::string::size_type UTF8Row{0}, UTF8Col{0};
+  uint32_t Row{0}, Col{0};
+  uint32_t UTF8Row{0}, UTF8Col{0};
   auto CStr = getContent();
   auto NullOffset = Content.size();
 
   for (std::string::size_type i = 0; i != Content.size();) {
-    ByteToPos.emplace_back(Row, Col);
-    ByteToUTF8Pos.emplace_back(UTF8Row, UTF8Col);
+    ByteToPos.push_back(TSPoint{Row, Col});
+    ByteToUTF8Pos.push_back(TSPoint{Row, Col});
     auto Byte = static_cast<unsigned char>(CStr[i]);
 
     if ((Byte & OneByteMask) == OneByteExpected) {
@@ -60,9 +60,9 @@ void SourceCode::setByteMap() {
           ContinuationExpected)
         throw std::runtime_error("Invalid UTF-8 sequence");
       i += 2;
-      ByteToPos.emplace_back(Row, Col + 1);
+      ByteToPos.push_back(TSPoint{Row, Col + 1});
       Col += 2;
-      ByteToUTF8Pos.emplace_back(UTF8Row, UTF8Col);
+      ByteToUTF8Pos.push_back(TSPoint{UTF8Row, UTF8Col});
       ++UTF8Col;
       continue;
     }
@@ -76,11 +76,11 @@ void SourceCode::setByteMap() {
               ContinuationExpected)
         throw std::runtime_error("Invalid UTF-8 sequence");
       i += 3;
-      ByteToPos.emplace_back(Row, Col + 1);
-      ByteToPos.emplace_back(Row, Col + 2);
+      ByteToPos.push_back(TSPoint{Row, Col + 1});
+      ByteToPos.push_back(TSPoint{Row, Col + 2});
       Col += 3;
-      ByteToUTF8Pos.emplace_back(UTF8Row, UTF8Col);
-      ByteToUTF8Pos.emplace_back(UTF8Row, UTF8Col);
+      ByteToUTF8Pos.push_back(TSPoint{UTF8Row, UTF8Col});
+      ByteToUTF8Pos.push_back(TSPoint{UTF8Row, UTF8Col});
       ++UTF8Col;
       continue;
     }
@@ -96,20 +96,20 @@ void SourceCode::setByteMap() {
               ContinuationExpected)
         throw std::runtime_error("Invalid UTF-8 sequence");
       i += 4;
-      ByteToPos.emplace_back(Row, Col + 1);
-      ByteToPos.emplace_back(Row, Col + 2);
-      ByteToPos.emplace_back(Row, Col + 3);
+      ByteToPos.push_back(TSPoint{Row, Col + 1});
+      ByteToPos.push_back(TSPoint{Row, Col + 2});
+      ByteToPos.push_back(TSPoint{Row, Col + 3});
       Col += 4;
-      ByteToUTF8Pos.emplace_back(UTF8Row, UTF8Col);
-      ByteToUTF8Pos.emplace_back(UTF8Row, UTF8Col);
-      ByteToUTF8Pos.emplace_back(UTF8Row, UTF8Col);
+      ByteToUTF8Pos.push_back(TSPoint{UTF8Row, UTF8Col});
+      ByteToUTF8Pos.push_back(TSPoint{UTF8Row, UTF8Col});
+      ByteToUTF8Pos.push_back(TSPoint{UTF8Row, UTF8Col});
       ++UTF8Col;
       continue;
     }
     throw std::runtime_error("Invalid UTF-8 sequence");
   }
-  ByteToPos.emplace_back(Row, Col);
-  ByteToUTF8Pos.emplace_back(UTF8Row, UTF8Col);
+  ByteToPos.push_back(TSPoint{Row, Col});
+  ByteToUTF8Pos.push_back(TSPoint{UTF8Row, UTF8Col});
 }
 
 } // namespace diffink

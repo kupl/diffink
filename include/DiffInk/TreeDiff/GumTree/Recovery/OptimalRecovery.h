@@ -20,6 +20,8 @@ public:
   OptimalRecovery(int MaxSize) noexcept
       : GreedyBottomUp::Recovery(), MaxSize{MaxSize} {}
 
+  ~OptimalRecovery() = default;
+
   void match(TreeDiff &Mapping, VirtualNode *Old, VirtualNode *New) final;
 };
 

@@ -11,7 +11,7 @@ struct VirtualNode {
   std::vector<VirtualNode *> Children{};
   bool Marker{false};
   std::size_t VirtualHeight{0};
-  xxh::hash_t<HashNode::BitMode> VirtualHash;
+  XXH128_hash_t VirtualHash;
 
   void _makePostOrder(std::vector<VirtualNode *> &PostOrder, VirtualNode *Iter);
 

@@ -1,6 +1,4 @@
-#include "DiffInk/Frontend/ScriptExporter.h"
-
-namespace diffink::frontend {
+#include "ScriptExporter.h"
 
 std::string ScriptExporter::exportAsString() const {
   std::string Buffer;
@@ -11,8 +9,8 @@ std::string ScriptExporter::exportAsString() const {
   return Buffer;
 }
 std::pair<std::string, std::string>
-ScriptExporter::exportAsHTML(const SourceCode &OldSrc,
-                             const SourceCode &NewSrc) const {
+ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
+                             const diffink::SourceCode &NewSrc) const {
   constexpr std::string_view BeginTemplate{R"(
 <!DOCTYPE html>
 <html>
@@ -52,17 +50,19 @@ ScriptExporter::exportAsHTML(const SourceCode &OldSrc,
     std::visit(
         [&](const auto &Action) {
           using T = std::decay_t<decltype(Action)>;
-          if constexpr (std::is_same_v<T, edit_action::InsertNode>) {
+          if constexpr (std::is_same_v<T, diffink::edit_action::InsertNode>) {
             NewTags[Action.Leaf.getByteRange().first].push_back(&InsertAction);
             NewTags[Action.Leaf.getByteRange().second].push_back(&ActionEnd);
           }
 
-          else if constexpr (std::is_same_v<T, edit_action::DeleteNode>) {
+          else if constexpr (std::is_same_v<T,
+                                            diffink::edit_action::DeleteNode>) {
             OldTags[Action.Leaf.getByteRange().first].push_back(&DeleteAction);
             OldTags[Action.Leaf.getByteRange().second].push_back(&ActionEnd);
           }
 
-          else if constexpr (std::is_same_v<T, edit_action::UpdateNode>) {
+          else if constexpr (std::is_same_v<T,
+                                            diffink::edit_action::UpdateNode>) {
             OldTags[Action.Leaf.getByteRange().first].push_back(&UpdateAction);
             OldTags[Action.Leaf.getByteRange().second].push_back(&ActionEnd);
             NewTags[Action.UpdatedLeaf.getByteRange().first].push_back(
@@ -71,7 +71,8 @@ ScriptExporter::exportAsHTML(const SourceCode &OldSrc,
                 &ActionEnd);
           }
 
-          else if constexpr (std::is_same_v<T, edit_action::MoveTree>) {
+          else if constexpr (std::is_same_v<T,
+                                            diffink::edit_action::MoveTree>) {
             OldTags[Action.Subtree.getByteRange().first].push_back(&MoveAction);
             OldTags[Action.Subtree.getByteRange().second].push_back(&ActionEnd);
             NewTags[Action.MovedSubtree.getByteRange().first].push_back(
@@ -80,13 +81,15 @@ ScriptExporter::exportAsHTML(const SourceCode &OldSrc,
                 &ActionEnd);
           }
 
-          else if constexpr (std::is_same_v<T, edit_action::InsertTree>) {
+          else if constexpr (std::is_same_v<T,
+                                            diffink::edit_action::InsertTree>) {
             NewTags[Action.Subtree.getByteRange().first].push_back(
                 &InsertAction);
             NewTags[Action.Subtree.getByteRange().second].push_back(&ActionEnd);
           }
 
-          else if constexpr (std::is_same_v<T, edit_action::DeleteTree>) {
+          else if constexpr (std::is_same_v<T,
+                                            diffink::edit_action::DeleteTree>) {
             OldTags[Action.Subtree.getByteRange().first].push_back(
                 &DeleteAction);
             OldTags[Action.Subtree.getByteRange().second].push_back(&ActionEnd);
@@ -159,4 +162,54 @@ ScriptExporter::exportAsHTML(const SourceCode &OldSrc,
   return {OldBuf, NewBuf};
 }
 
-} // namespace diffink::frontend
+nlohmann::json
+ScriptExporter::exportAsJSON(const diffink::TreeDiff &Mapping) const {
+  using json = nlohmann::json;
+  auto Buffer =
+      json({{"matches", json::array()}, {"edit_script", json::array()}});
+
+  auto &Matches = Buffer["matches"];
+  for (const auto [OldNode, NewNode] : Mapping.getMapping())
+    Matches.push_back({{"original", OldNode->Original.toString()},
+                       {"modified", NewNode->Original.toString()}});
+
+  auto &Actions = Buffer["edit_script"];
+  for (const auto &Action : Script) {
+    std::visit(
+        [&Actions](const auto &Action) {
+          using T = std::decay_t<decltype(Action)>;
+          if constexpr (std::is_same_v<T, diffink::edit_action::InsertNode>)
+            Actions.push_back({{"action", "insert-node"},
+                               {"insert", Action.Leaf.toString()},
+                               {"to", Action.Parent.toString()},
+                               {"at", Action.Index}});
+          else if constexpr (std::is_same_v<T,
+                                            diffink::edit_action::DeleteNode>)
+            Actions.push_back({{"action", "delete-node"},
+                               {"delete", Action.Leaf.toString()}});
+          else if constexpr (std::is_same_v<T, diffink::edit_action::MoveTree>)
+            Actions.push_back({{"action", "move-tree"},
+                               {"move", Action.Subtree.toString()},
+                               {"to", Action.Parent.toString()},
+                               {"at", Action.Index},
+                               {"moved", Action.MovedSubtree.toString()}});
+          else if constexpr (std::is_same_v<T,
+                                            diffink::edit_action::UpdateNode>)
+            Actions.push_back({{"action", "update-node"},
+                               {"replace", Action.Leaf.toString()},
+                               {"by", Action.UpdatedLeaf.toString()}});
+          else if constexpr (std::is_same_v<T,
+                                            diffink::edit_action::InsertTree>)
+            Actions.push_back({{"action", "insert-tree"},
+                               {"insert", Action.Subtree.toString()},
+                               {"to", Action.Parent.toString()},
+                               {"at", Action.Index}});
+          else if constexpr (std::is_same_v<T,
+                                            diffink::edit_action::DeleteTree>)
+            Actions.push_back({{"action", "delete-tree"},
+                               {"delete", Action.Subtree.toString()}});
+        },
+        Action);
+  }
+  return Buffer;
+}

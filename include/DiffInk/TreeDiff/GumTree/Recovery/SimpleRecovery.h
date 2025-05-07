@@ -16,6 +16,8 @@ private:
 public:
   SimpleRecovery() noexcept = default;
 
+  ~SimpleRecovery() = default;
+
   void match(TreeDiff &Mapping, VirtualNode *Old, VirtualNode *New) final;
 };
 

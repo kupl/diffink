@@ -10,8 +10,9 @@ private:
   using NodePair = std::pair<VirtualNode *, VirtualNode *>;
 
   struct PairHash {
-    xxh::hash64_t operator()(NodePair Pair) const {
-      return xxh::xxhash3<64>(&Pair, sizeof(Pair));
+    std::size_t operator()(NodePair Pair) const {
+      return std::hash<VirtualNode *>{}(Pair.first) ^
+             std::hash<VirtualNode *>{}(Pair.second);
     }
   };
 

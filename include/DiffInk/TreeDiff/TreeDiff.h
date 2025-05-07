@@ -19,28 +19,19 @@ public:
   };
 
 private:
-  static constexpr std::size_t BitMode = HashNode::BitMode;
+  const XXH128_hash_t UncommonSymbolHash{.low64 = 0, .high64 = 0};
 
-private:
   VirtualTree OldTree;
   VirtualTree NewTree;
-
-public:
   std::unordered_map<VirtualNode *, VirtualNode *> OldToNewMapping;
   std::unordered_map<VirtualNode *, VirtualNode *> NewToOldMapping;
 
-private:
   std::unordered_map<const HashNode *, VirtualNode *> VirtualMap;
   std::vector<VirtualNode *> UncommonOldNodes;
   std::vector<VirtualNode *> UncommonNewNodes;
 
-  const TSSymbol UncommonSymbol{static_cast<TSSymbol>(-1)};
-  const xxh::hash_t<BitMode> UncommonSymbolHash;
-
 private:
-  TreeDiff() noexcept
-      : UncommonSymbolHash{
-            xxh::xxhash3<BitMode>(&UncommonSymbol, sizeof(UncommonSymbol))} {}
+  TreeDiff() noexcept = default;
 
   ~TreeDiff() = default;
 
@@ -73,6 +64,10 @@ public:
   VirtualNode *getOldRoot() const noexcept { return OldTree.getRoot(); }
 
   VirtualNode *getNewRoot() const noexcept { return NewTree.getRoot(); }
+
+  const decltype(OldToNewMapping) &getMapping() const noexcept {
+    return OldToNewMapping;
+  }
 
   bool areContained(VirtualNode *OldNode, VirtualNode *NewNode) const;
 
