@@ -32,7 +32,7 @@ option(LANG_TYPESCRIPT "Enable TypeScript language support" OFF)
 
 # Source
 file(GLOB_RECURSE SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/lib/src/*.cpp
 )
 
 # External
@@ -138,7 +138,7 @@ file(GLOB TREE_SITTER_BINDINGS_C
 )
 
 include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/lib/include
   ${CMAKE_CURRENT_SOURCE_DIR}/externals
   ${CMAKE_CURRENT_SOURCE_DIR}/externals/tree-sitter/lib/include
   ${TREE_SITTER_BINDINGS_C}
