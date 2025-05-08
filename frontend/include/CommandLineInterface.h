@@ -2,7 +2,9 @@
 #define FRONTEND_COMMANDLINEINTERFACE_H
 
 #include "DiffInk/Api.h"
+#include "ScriptExporter.h"
 #include <argparse.hpp>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 
@@ -63,16 +65,22 @@
 
 class CommandLineInterface {
 private:
+  using ExporterType = std::function<void(const ScriptExporter &)>;
+
   int argc;
   char **argv;
   argparse::ArgumentParser Program;
+  std::unique_ptr<diffink::SourceCode> OldCode;
+  std::unique_ptr<diffink::SourceCode> NewCode;
+  diffink::MerkleTree OldTree;
+  diffink::MerkleTree NewTree;
 
   std::unique_ptr<diffink::SmartParser> Parser;
   std::unique_ptr<diffink::TreeDiff::Matcher> Matcher;
-  std::filesystem::path OutputDiretory;
+  std::vector<ExporterType> Formats;
+  std::filesystem::path OutputDirectory;
   bool IsRaw;
-  bool DumpSyntaxTree;
-  bool Logging;
+  std::optional<std::ofstream> Logger;
 
 private:
   void initArguments();
@@ -83,9 +91,23 @@ private:
 
   void setMatcher(const std::string &Arg);
 
+  void setFormats(const std::vector<std::string> &Args);
+
   void setOutputDirectory(const std::string &Arg);
 
-  void exportAsText(const diffink::ExtendedEditScript &Script) const;
+  void setLogger();
+
+  void exportAsText(const ScriptExporter &Exporter) const;
+
+  void exportAsHTML(const ScriptExporter &Exporter) const;
+
+  void exportAsJSON(const ScriptExporter &Exporter) const;
+
+  diffink::ExtendedEditScript runDiffInk();
+
+  diffink::ExtendedEditScript runRawDiff();
+
+  void makeReport(diffink::ExtendedEditScript &&Script) const;
 
 public:
   CommandLineInterface(int argc, char *argv[]) noexcept

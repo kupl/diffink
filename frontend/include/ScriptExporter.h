@@ -2,6 +2,7 @@
 #define FRONTEND_SCRIPTEXPORTER_H
 
 #include "DiffInk/TreeDiff/TreeDiff.h"
+#include <cmath>
 #include <nlohmann/json.hpp>
 
 class ScriptExporter {
@@ -21,7 +22,7 @@ public:
   exportAsHTML(const diffink::SourceCode &OldSrc,
                const diffink::SourceCode &NewSrc) const;
 
-  nlohmann::json exportAsJSON(const diffink::TreeDiff &Mapping) const;
+  nlohmann::json exportAsJSON() const;
 };
 
 #endif // FRONTEND_SCRIPTEXPORTER_H

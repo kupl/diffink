@@ -40,9 +40,9 @@ public:
   bool parse(TSParser &Parser, const SourceCode &Code);
 
   // Return false if the tree has an error node
-  bool parseIncrementally(TSParser &Parser, MerkleTree &OldTree,
-                          const SourceCode &OldCode, const SourceCode &Code,
-                          const EditSequence &Seq);
+  bool incparse(TSParser &Parser, MerkleTree &OldTree,
+                const SourceCode &OldCode, const SourceCode &Code,
+                const EditSequence &Seq);
 
   void setFlattened(const std::unordered_set<std::string> &Flattened) {
     Config.Flattened = Flattened;

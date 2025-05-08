@@ -2,6 +2,7 @@
 #define DIFFINK_AST_HASHNODE_H
 
 #include "DiffInk/AST/SourceCode.h"
+#include <format>
 #include <list>
 #include <memory>
 #include <unordered_map>
@@ -101,14 +102,9 @@ public:
   }
 };
 
-constexpr XXH128_hash_t xxhVector(const std::vector<XXH128_hash_t> &data) {
-  return XXH128(static_cast<const void *>(data.data()),
-                data.size() * sizeof(XXH128_hash_t), 0);
-}
+XXH128_hash_t xxhVector(const std::vector<XXH128_hash_t> &data);
 
-constexpr XXH128_hash_t xxhString(const std::string &data) {
-  return XXH128(static_cast<const void *>(data.data()), data.size(), 0);
-}
+XXH128_hash_t xxhString(const std::string &data);
 
 } // namespace diffink
 

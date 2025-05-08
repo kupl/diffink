@@ -85,7 +85,6 @@ void CommandLineInterface::initArguments() {
 
   Program.add_argument("-f", "--format")
       .help("selects diff report format: text, html, json")
-      .choices("text", "html", "json")
       .nargs(argparse::nargs_pattern::any)
       .default_value(std::vector<std::string>{"text"});
 
@@ -95,20 +94,19 @@ void CommandLineInterface::initArguments() {
 
   Program.add_argument("-r", "--raw")
       .help("disables DiffInk's tree differencing algorithms")
-      .default_value(false)
-      .implicit_value(true);
+      .implicit_value(true)
+      .default_value(false);
 
-  Program.add_argument("--dump-syntax-tree")
-      .help("stores syntax tree of input codes\n"
-            "JSON format will be saved in \"${OUTPUT}/\"")
-      .default_value(false)
-      .implicit_value(true);
+  Program.add_argument("--log")
+      .help("log file will be saved as \"${OUTPUT}/log\"")
+      .implicit_value(true)
+      .default_value(false);
 
-  Program.add_argument("--logging")
-      .help("enables logging\n"
-            "log file will be saved as \"${OUTPUT}/log\"")
-      .default_value(false)
-      .implicit_value(true);
+  // Program.add_argument("--dump-syntax-tree")
+  //     .help("stores syntax tree of input codes; "
+  //           "JSON format will be saved in \"${OUTPUT}/\"")
+  //     .default_value(false)
+  //     .implicit_value(true);
 }
 
 std::string
@@ -247,23 +245,200 @@ void CommandLineInterface::setMatcher(const std::string &Arg) {
     throw std::runtime_error("Invalid matcher: " + Arg);
 }
 
+void CommandLineInterface::setFormats(const std::vector<std::string> &Args) {
+  for (const auto &Arg : Args) {
+    if (Arg == "text")
+      Formats.emplace_back(
+          [this](const ScriptExporter &Exporter) { exportAsText(Exporter); });
+    else if (Arg == "html")
+      Formats.emplace_back(
+          [this](const ScriptExporter &Exporter) { exportAsHTML(Exporter); });
+    else if (Arg == "json")
+      Formats.emplace_back(
+          [this](const ScriptExporter &Exporter) { exportAsJSON(Exporter); });
+    else
+      throw std::runtime_error("Invalid format: " + Arg);
+  }
+}
+
 void CommandLineInterface::setOutputDirectory(const std::string &Arg) {
-  // if (Arg.empty())
-  //   OutputStream = std::make_unique<std::ostream>(std::cout.rdbuf());
-  // else {
-  //   auto FileStream = std::make_unique<std::ofstream>(Arg);
-  //   if (FileStream && FileStream->is_open())
-  //     OutputStream = std::move(FileStream);
-  //   throw std::runtime_error("Failed to open output file: " + Arg);
-  // }
+  OutputDirectory = Arg;
+  if (!std::filesystem::exists(OutputDirectory))
+    std::filesystem::create_directories(OutputDirectory);
+}
+
+void CommandLineInterface::exportAsText(const ScriptExporter &Exporter) const {
+  std::ofstream File(OutputDirectory / "diff.txt");
+  if (!File)
+    throw std::runtime_error("Failed to open file: " +
+                             (OutputDirectory / "diff.txt").string());
+  File << Exporter.exportAsString();
+}
+
+void CommandLineInterface::setLogger() {
+  Logger = std::ofstream(OutputDirectory / "log");
+  if (!Logger)
+    throw std::runtime_error("Failed to open file: " +
+                             (OutputDirectory / "log").string());
+}
+
+void CommandLineInterface::exportAsHTML(const ScriptExporter &Exporter) const {
+  auto [Old, New] = Exporter.exportAsHTML(*OldCode, *NewCode);
+  std::ofstream FileOld(OutputDirectory / "diff_original.html");
+  if (!FileOld)
+    throw std::runtime_error("Failed to open file: " +
+                             (OutputDirectory / "diff_original.html").string());
+  std::ofstream FileNew(OutputDirectory / "diff_modified.html");
+  if (!FileNew)
+    throw std::runtime_error("Failed to open file: " +
+                             (OutputDirectory / "diff_modified.html").string());
+  FileOld << Old;
+  FileNew << New;
+}
+
+void CommandLineInterface::exportAsJSON(const ScriptExporter &Exporter) const {
+  std::ofstream File(OutputDirectory / "diff.json");
+  if (!File)
+    throw std::runtime_error("Failed to open file: " +
+                             (OutputDirectory / "diff.json").string());
+  File << Exporter.exportAsJSON().dump(2);
+}
+
+diffink::ExtendedEditScript CommandLineInterface::runDiffInk() {
+  {
+    auto Start = std::chrono::steady_clock::now();
+    OldCode = std::make_unique<diffink::SourceCode>(
+        read(Program.get<std::string>("original")));
+    OldTree.parse(Parser->get(), *OldCode);
+
+    if (Logger) {
+      auto End = std::chrono::steady_clock::now();
+      auto Time =
+          std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
+              .count();
+      *Logger << std::format("Parsing original code took: {}.{:03} ms",
+                             Time / 1000, Time % 1000)
+              << std::endl;
+    }
+  }
+  {
+    auto Start = std::chrono::steady_clock::now();
+    NewCode = std::make_unique<diffink::SourceCode>(
+        read(Program.get<std::string>("modified")));
+    NewTree.incparse(Parser->get(), OldTree, *OldCode, *NewCode,
+                     diffink::diffText(*OldCode, *NewCode));
+
+    if (Logger) {
+      auto End = std::chrono::steady_clock::now();
+      auto Time =
+          std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
+              .count();
+      *Logger << std::format("Parsing modified code took: {}.{:03} ms",
+                             Time / 1000, Time % 1000)
+              << std::endl;
+    }
+  }
+
+  auto Start = std::chrono::steady_clock::now();
+  auto Script = diffink::TreeDiff::runDiffInk(Matcher.get(), OldTree, NewTree);
+
+  if (Logger) {
+    auto End = std::chrono::steady_clock::now();
+    auto Time =
+        std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
+            .count();
+    *Logger << std::format("Differencing took: {}.{:03} ms", Time / 1000,
+                           Time % 1000)
+            << std::flush;
+  }
+  return diffink::simplifyEditScript(Script);
+}
+
+diffink::ExtendedEditScript CommandLineInterface::runRawDiff() {
+  {
+    auto Start = std::chrono::steady_clock::now();
+    OldCode = std::make_unique<diffink::SourceCode>(
+        read(Program.get<std::string>("original")));
+    OldTree.parse(Parser->get(), *OldCode);
+
+    if (Logger) {
+      auto End = std::chrono::steady_clock::now();
+      auto Time =
+          std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
+              .count();
+      *Logger << std::format("Parsing original code took: {}.{:03} ms",
+                             Time / 1000, Time % 1000)
+              << std::endl;
+    }
+  }
+  {
+    auto Start = std::chrono::steady_clock::now();
+    NewCode = std::make_unique<diffink::SourceCode>(
+        read(Program.get<std::string>("modified")));
+    NewTree.parse(Parser->get(), *NewCode);
+
+    if (Logger) {
+      auto End = std::chrono::steady_clock::now();
+      auto Time =
+          std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
+              .count();
+      *Logger << std::format("Parsing modified code took: {}.{:03} ms",
+                             Time / 1000, Time % 1000)
+              << std::endl;
+    }
+  }
+
+  auto Start = std::chrono::steady_clock::now();
+  auto Script = diffink::TreeDiff::runDiff(Matcher.get(), OldTree, NewTree);
+
+  if (Logger) {
+    auto End = std::chrono::steady_clock::now();
+    auto Time =
+        std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
+            .count();
+    *Logger << std::format("Differencing took: {}.{:03} ms", Time / 1000,
+                           Time % 1000)
+            << std::flush;
+  }
+  return diffink::simplifyEditScript(Script);
+}
+
+void CommandLineInterface::makeReport(
+    diffink::ExtendedEditScript &&Script) const {
+  ScriptExporter Exporter(Script);
+  for (const auto &Format : Formats)
+    Format(Exporter);
 }
 
 void CommandLineInterface::run() {
   initArguments();
   Program.parse_args(argc, argv);
-
   setParser(Program.get<std::string>("--language"));
   setMatcher(Program.get<std::string>("--matcher"));
+  setFormats(Program.get<std::vector<std::string>>("--format"));
+  setOutputDirectory(Program.get<std::string>("--output"));
+  IsRaw = Program.get<bool>("--raw");
+  if (Program.get<bool>("--log"))
+    setLogger();
+
+  if (Logger)
+    *Logger << std::format("DiffInk method: {}\n"
+                           "Matcher: {}\n"
+                           "Language: {}\n"
+                           "Original code file: {}\n"
+                           "Modified code file: {}\n"
+                           "========",
+                           IsRaw ? "raw" : "diffink",
+                           Program.get<std::string>("--matcher"),
+                           Program.get<std::string>("--language"),
+                           Program.get<std::string>("original"),
+                           Program.get<std::string>("modified"))
+            << std::endl;
+
+  if (IsRaw)
+    makeReport(runRawDiff());
+  else
+    makeReport(runDiffInk());
 
   std::exit(0);
 }

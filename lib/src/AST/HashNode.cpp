@@ -10,10 +10,8 @@ void HashNode::toStringRecursively(std::string &Buffer, std::size_t Depth,
 }
 
 std::string HashNode::UTF8Range::toString() const {
-  return "(" + std::to_string(StartPos.row + 1) + "," +
-         std::to_string(StartPos.column + 1) + ")-(" +
-         std::to_string(EndPos.row + 1) + "," +
-         std::to_string(EndPos.column + 1) + ")";
+  return std::format("({},{})-({},{})", StartPos.row + 1, StartPos.column + 1,
+                     EndPos.row + 1, EndPos.column + 1);
 }
 
 bool HashNode::build(const SourceCode &Code, TSTreeCursor &Cursor,
@@ -105,12 +103,9 @@ std::vector<const HashNode *> HashNode::makePostOrder() const {
 }
 
 std::string HashNode::toString() const {
-  std::string Buffer;
-  Buffer.append(Type);
-  if (!Label.empty())
-    Buffer.append(": \"").append(Label).push_back('"');
-  Buffer.append(" ").append(PosRange.toString());
-  return Buffer;
+  if (Label.empty())
+    return std::format("{} {}", Type, PosRange.toString());
+  return std::format("{}: '{}' {}", Type, Label, PosRange.toString());
 }
 
 std::string HashNode::toStringRecursively(std::size_t Indent) const {
@@ -139,6 +134,15 @@ std::unique_ptr<HashNode> HashNode::build(TSNode RootNode,
   ts_tree_cursor_delete(&Cursor);
   Root->makeMetadataRecursively();
   return Root;
+}
+
+XXH128_hash_t xxhVector(const std::vector<XXH128_hash_t> &data) {
+  return XXH128(static_cast<const void *>(data.data()),
+                data.size() * sizeof(XXH128_hash_t), 0);
+}
+
+XXH128_hash_t xxhString(const std::string &data) {
+  return XXH128(static_cast<const void *>(data.data()), data.size(), 0);
 }
 
 } // namespace diffink

@@ -8,5 +8,4 @@
 build/
 
 # Output files
-diffink_log
-diffink_report/
+diffink_reports/

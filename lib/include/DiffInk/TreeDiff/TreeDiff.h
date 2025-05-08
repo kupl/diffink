@@ -65,10 +65,6 @@ public:
 
   VirtualNode *getNewRoot() const noexcept { return NewTree.getRoot(); }
 
-  const decltype(OldToNewMapping) &getMapping() const noexcept {
-    return OldToNewMapping;
-  }
-
   bool areContained(VirtualNode *OldNode, VirtualNode *NewNode) const;
 
   void insertMapping(VirtualNode *OldNode, VirtualNode *NewNode);

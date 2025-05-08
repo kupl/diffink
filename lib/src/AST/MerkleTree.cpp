@@ -145,10 +145,9 @@ bool MerkleTree::parse(TSParser &Parser, const SourceCode &Code) {
   return false;
 }
 
-bool MerkleTree::parseIncrementally(TSParser &Parser, MerkleTree &OldTree,
-                                    const SourceCode &OldCode,
-                                    const SourceCode &Code,
-                                    const EditSequence &Seq) {
+bool MerkleTree::incparse(TSParser &Parser, MerkleTree &OldTree,
+                          const SourceCode &OldCode, const SourceCode &Code,
+                          const EditSequence &Seq) {
   clear();
   OldTree.clearMapping();
 

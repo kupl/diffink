@@ -39,6 +39,10 @@ public:
 
   std::string::size_type getSize() const noexcept { return Content.size(); }
 
+  uint32_t getLOC() const noexcept {
+    return ByteToPos.empty() ? 0 : ByteToPos.back().row + 1;
+  }
+
   std::string getSubstring(std::string::size_type StartByte,
                            std::string::size_type EndByte) const noexcept {
     return std::string(getContent() + StartByte, getContent() + EndByte);
