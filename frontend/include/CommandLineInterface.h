@@ -8,6 +8,20 @@
 #include <filesystem>
 #include <fstream>
 
+#if defined(_WIN32) || defined(_WIN64)
+#define FRONTEND_PLATFORM_UNSUPPORTED
+// #define FRONTEND_PLATFORM_WINDOWS
+// #include <windows.h>
+#elif defined(__linux__)
+#define FRONTEND_PLATFORM_LINUX
+#include <unistd.h>
+#elif defined(__APPLE__)
+#define FRONTEND_PLATFORM_MACOS
+#include <mach-o/dyld.h>
+#else
+#define FRONTEND_PLATFORM_UNSUPPORTED
+#endif
+
 #ifdef DIFFINK_LANGUAGE_SUPPORT_C
 #include <tree-sitter-c.h>
 #endif
@@ -70,11 +84,7 @@ private:
   int argc;
   char **argv;
   argparse::ArgumentParser Program;
-  std::unique_ptr<diffink::SourceCode> OldCode;
-  std::unique_ptr<diffink::SourceCode> NewCode;
-  diffink::MerkleTree OldTree;
-  diffink::MerkleTree NewTree;
-
+  std::filesystem::path DiffinkDirectory;
   std::unique_ptr<diffink::SmartParser> Parser;
   std::unique_ptr<diffink::TreeDiff::Matcher> Matcher;
   std::vector<ExporterType> Formats;
@@ -82,10 +92,17 @@ private:
   bool IsRaw;
   std::optional<std::ofstream> Logger;
 
+  std::unique_ptr<diffink::SourceCode> OldCode;
+  std::unique_ptr<diffink::SourceCode> NewCode;
+  diffink::MerkleTree OldTree;
+  diffink::MerkleTree NewTree;
+
 private:
   void initArguments();
 
   std::string read(const std::filesystem::path &Path) const;
+
+  void setDiffinkDirectory();
 
   void setParser(const std::string &Arg);
 

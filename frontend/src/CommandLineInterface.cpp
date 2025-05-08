@@ -121,6 +121,33 @@ CommandLineInterface::read(const std::filesystem::path &Path) const {
   return Content;
 }
 
+#if defined(FRONTEND_PLATFORM_LINUX)
+void CommandLineInterface::setDiffinkDirectory() {
+  char Buffer[PATH_MAX];
+  if (auto Size = readlink("/proc/self/exe", Buffer, PATH_MAX);
+      Size != -1 && Size < PATH_MAX)
+    DiffinkDirectory = std::filesystem::path(
+                           std::string(Buffer, static_cast<std::size_t>(Size)))
+                           .parent_path()
+                           .parent_path()
+                           .parent_path()
+                           .parent_path();
+}
+
+#elif defined(FRONTEND_PLATFORM_MACOS)
+void CommandLineInterface::setDiffinkDirectory() {
+  if (uint32_t Size{0}; _NSGetExecutablePath(nullptr, &Size) == -1) {
+    std::string<char> buffer(Size);
+    if (_NSGetExecutablePath(buffer.data(), &Size) == 0)
+      DiffinkDirectory = fs::path(buffer.data())
+                             .parent_path()
+                             .parent_path()
+                             .parent_path()
+                             .parent_path();
+  }
+}
+#endif
+
 void CommandLineInterface::setParser(const std::string &Arg) {
 #ifdef DIFFINK_LANGUAGE_SUPPORT_C
   if (Arg == "c") {
@@ -412,6 +439,7 @@ void CommandLineInterface::makeReport(
 
 void CommandLineInterface::run() {
   initArguments();
+  setDiffinkDirectory();
   Program.parse_args(argc, argv);
   setParser(Program.get<std::string>("--language"));
   setMatcher(Program.get<std::string>("--matcher"));
