@@ -134,18 +134,14 @@ void MerkleTree::clear() noexcept {
   clearMapping();
 }
 
-bool MerkleTree::parse(TSParser &Parser, const SourceCode &Code) {
+void MerkleTree::parse(TSParser &Parser, const SourceCode &Code) {
   clear();
   RawTree.reset(ts_parser_parse_string(&Parser, nullptr, Code.getContent(),
                                        Code.getSize()));
-
-  if (Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code, Config))
-    return true;
-  clear();
-  return false;
+  Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code, Config);
 }
 
-bool MerkleTree::incparse(TSParser &Parser, MerkleTree &OldTree,
+void MerkleTree::incparse(TSParser &Parser, MerkleTree &OldTree,
                           const SourceCode &OldCode, const SourceCode &Code,
                           const EditSequence &Seq) {
   clear();
@@ -155,14 +151,8 @@ bool MerkleTree::incparse(TSParser &Parser, MerkleTree &OldTree,
   applyEditSequence(OldCode, Code, *EditedTree, Seq);
   RawTree.reset(ts_parser_parse_string(&Parser, EditedTree, Code.getContent(),
                                        Code.getSize()));
-  if (!(Root =
-            HashNode::build(ts_tree_root_node(RawTree.get()), Code, Config))) {
-    ts_tree_delete(EditedTree);
-    clear();
-    return false;
-  }
+  Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code, Config);
   Root->makeStructuralHashRecursively();
-
   auto OldCursor = ts_tree_cursor_new(ts_tree_root_node(EditedTree));
   auto NewCursor = ts_tree_cursor_new(ts_tree_root_node(RawTree.get()));
   identifyChange(OldTree, {OldTree.getRoot(), OldCursor, *Root, NewCursor});
@@ -170,7 +160,6 @@ bool MerkleTree::incparse(TSParser &Parser, MerkleTree &OldTree,
   ts_tree_cursor_delete(&OldCursor);
   ts_tree_cursor_delete(&NewCursor);
   ts_tree_delete(EditedTree);
-  return true;
 }
 
 } // namespace diffink

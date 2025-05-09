@@ -78,9 +78,9 @@ void CommandLineInterface::initArguments() {
   }
 
   Program.add_argument("-m", "--matcher")
-      .help("selects matcher algorithm: gumtree-simple, gumtree-opt-1000, "
+      .help("selects matcher algorithm: gumtree-simple, gumtree-opt, "
             "gumtree-opt-inf")
-      .choices("gumtree-simple", "gumtree-opt-1000", "gumtree-opt-inf")
+      .choices("gumtree-simple", "gumtree-opt", "gumtree-opt-inf")
       .default_value(std::string{"gumtree-simple"});
 
   Program.add_argument("-f", "--format")
@@ -90,7 +90,7 @@ void CommandLineInterface::initArguments() {
 
   Program.add_argument("-o", "--output")
       .help("specifies directory to save diffink outputs")
-      .default_value(std::string{"$CWD/diffink_reports/"});
+      .default_value(std::string{"diffink_reports/"});
 
   Program.add_argument("-r", "--raw")
       .help("disables DiffInk's tree differencing algorithms")
@@ -257,7 +257,7 @@ void CommandLineInterface::setParser(const std::string &Arg) {
     return;
   }
 #endif
-  throw std::runtime_error("Invalid language: " + Arg);
+  throw std::invalid_argument("Invalid language: " + Arg);
 }
 
 void CommandLineInterface::setMatcher(const std::string &Arg) {
@@ -269,7 +269,7 @@ void CommandLineInterface::setMatcher(const std::string &Arg) {
     Matcher =
         diffink::makeGumtreeOptimal(std::numeric_limits<std::size_t>::max());
   else
-    throw std::runtime_error("Invalid matcher: " + Arg);
+    throw std::invalid_argument("Invalid matcher: " + Arg);
 }
 
 void CommandLineInterface::setFormats(const std::vector<std::string> &Args) {
@@ -284,7 +284,7 @@ void CommandLineInterface::setFormats(const std::vector<std::string> &Args) {
       Formats.emplace_back(
           [this](const ScriptExporter &Exporter) { exportAsJSON(Exporter); });
     else
-      throw std::runtime_error("Invalid format: " + Arg);
+      throw std::invalid_argument("Invalid format: " + Arg);
   }
 }
 
@@ -334,8 +334,8 @@ void CommandLineInterface::exportAsJSON(const ScriptExporter &Exporter) const {
 diffink::ExtendedEditScript CommandLineInterface::runDiffInk() {
   {
     auto Start = std::chrono::steady_clock::now();
-    if (OldTree.parse(Parser->get(), *OldCode))
-      throw std::runtime_error("Failed to parse original code file");
+    OldTree.parse(Parser->get(), *OldCode);
+    std::cout << OldTree.getRoot().toStringRecursively() << std::endl;
 
     if (Logger) {
       auto End = std::chrono::steady_clock::now();

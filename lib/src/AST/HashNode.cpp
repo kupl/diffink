@@ -14,15 +14,15 @@ std::string HashNode::UTF8Range::toString() const {
                      EndPos.row + 1, EndPos.column + 1);
 }
 
-bool HashNode::build(const SourceCode &Code, TSTreeCursor &Cursor,
+void HashNode::build(const SourceCode &Code, TSTreeCursor &Cursor,
                      HashNode &Parent, const BuildConfig &Config) {
   auto Node = ts_tree_cursor_current_node(&Cursor);
-  if (ts_node_is_error(Node))
-    return false;
-
+  if (ts_node_is_missing(Node))
+    return;
   std::string NodeType{ts_node_type(Node)};
+
   if (Config.Ignored.contains(NodeType))
-    return true;
+    return;
   bool IsFlattened = Config.Flattened.contains(NodeType);
   auto AliasIter = Config.Aliased.find(NodeType);
   if (AliasIter != Config.Aliased.cend())
@@ -35,12 +35,10 @@ bool HashNode::build(const SourceCode &Code, TSTreeCursor &Cursor,
         Parent.Children.emplace_back(Node, std::move(NodeType), Code, false);
     if (!IsFlattened)
       do
-        if (!build(Code, Cursor, CurNode, Config))
-          return false;
+        build(Code, Cursor, CurNode, Config);
       while (ts_tree_cursor_goto_next_sibling(&Cursor));
     ts_tree_cursor_goto_parent(&Cursor);
   }
-  return true;
 }
 
 HashNode::HashNode(const TSNode &RawNode, std::string &&Type,
@@ -118,20 +116,18 @@ std::string HashNode::toStringRecursively(std::size_t Indent) const {
 std::unique_ptr<HashNode> HashNode::build(TSNode RootNode,
                                           const SourceCode &Code,
                                           const BuildConfig &Config) {
-  if (ts_node_is_null(RootNode) || ts_node_is_error(RootNode))
+  if (ts_node_is_null(RootNode))
     return nullptr;
 
   auto Root =
       std::make_unique<HashNode>(RootNode, ts_node_type(RootNode), Code, false);
   auto Cursor = ts_tree_cursor_new(RootNode);
-
   if (ts_tree_cursor_goto_first_child(&Cursor))
     do
-      if (!build(Code, Cursor, *Root, Config))
-        return nullptr;
+      build(Code, Cursor, *Root, Config);
     while (ts_tree_cursor_goto_next_sibling(&Cursor));
-
   ts_tree_cursor_delete(&Cursor);
+
   Root->makeMetadataRecursively();
   return Root;
 }

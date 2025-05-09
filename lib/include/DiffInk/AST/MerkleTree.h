@@ -36,11 +36,9 @@ public:
 
   void clear() noexcept;
 
-  // Return false if the tree has an error node
-  bool parse(TSParser &Parser, const SourceCode &Code);
+  void parse(TSParser &Parser, const SourceCode &Code);
 
-  // Return false if the tree has an error node
-  bool incparse(TSParser &Parser, MerkleTree &OldTree,
+  void incparse(TSParser &Parser, MerkleTree &OldTree,
                 const SourceCode &OldCode, const SourceCode &Code,
                 const EditSequence &Seq);
 

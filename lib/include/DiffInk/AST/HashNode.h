@@ -45,8 +45,7 @@ private:
   void toStringRecursively(std::string &Buffer, std::size_t Depth,
                            std::size_t Indent) const;
 
-  // Return false if the tree has an error node
-  static bool build(const SourceCode &Code, TSTreeCursor &Cursor,
+  static void build(const SourceCode &Code, TSTreeCursor &Cursor,
                     HashNode &Parent, const BuildConfig &Config);
 
   // Metadata = {Height, Size, ExactHash}
@@ -85,7 +84,6 @@ public:
 
   std::string toStringRecursively(std::size_t Indent = DefaultIndent) const;
 
-  // Return nullptr if the tree is empty or has an error node
   static std::unique_ptr<HashNode>
   build(TSNode RootNode, const SourceCode &Code, const BuildConfig &Config);
 
