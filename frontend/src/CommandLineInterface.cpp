@@ -90,7 +90,7 @@ void CommandLineInterface::initArguments() {
 
   Program.add_argument("-o", "--output")
       .help("specifies directory to save diffink outputs")
-      .default_value(std::string{"diffink_reports/"});
+      .default_value(std::string{"$CWD/diffink_reports/"});
 
   Program.add_argument("-r", "--raw")
       .help("disables DiffInk's tree differencing algorithms")
@@ -334,9 +334,8 @@ void CommandLineInterface::exportAsJSON(const ScriptExporter &Exporter) const {
 diffink::ExtendedEditScript CommandLineInterface::runDiffInk() {
   {
     auto Start = std::chrono::steady_clock::now();
-    OldCode = std::make_unique<diffink::SourceCode>(
-        read(Program.get<std::string>("original")));
-    OldTree.parse(Parser->get(), *OldCode);
+    if (OldTree.parse(Parser->get(), *OldCode))
+      throw std::runtime_error("Failed to parse original code file");
 
     if (Logger) {
       auto End = std::chrono::steady_clock::now();
@@ -350,8 +349,6 @@ diffink::ExtendedEditScript CommandLineInterface::runDiffInk() {
   }
   {
     auto Start = std::chrono::steady_clock::now();
-    NewCode = std::make_unique<diffink::SourceCode>(
-        read(Program.get<std::string>("modified")));
     NewTree.incparse(Parser->get(), OldTree, *OldCode, *NewCode,
                      diffink::diffText(*OldCode, *NewCode));
 
@@ -384,8 +381,6 @@ diffink::ExtendedEditScript CommandLineInterface::runDiffInk() {
 diffink::ExtendedEditScript CommandLineInterface::runRawDiff() {
   {
     auto Start = std::chrono::steady_clock::now();
-    OldCode = std::make_unique<diffink::SourceCode>(
-        read(Program.get<std::string>("original")));
     OldTree.parse(Parser->get(), *OldCode);
 
     if (Logger) {
@@ -400,8 +395,6 @@ diffink::ExtendedEditScript CommandLineInterface::runRawDiff() {
   }
   {
     auto Start = std::chrono::steady_clock::now();
-    NewCode = std::make_unique<diffink::SourceCode>(
-        read(Program.get<std::string>("modified")));
     NewTree.parse(Parser->get(), *NewCode);
 
     if (Logger) {
@@ -430,6 +423,22 @@ diffink::ExtendedEditScript CommandLineInterface::runRawDiff() {
   return diffink::simplifyEditScript(Script);
 }
 
+void CommandLineInterface::logMeta() {
+  if (Logger)
+    *Logger << std::format("Method: {}\n"
+                           "Matcher: {}\n"
+                           "Language: {}\n"
+                           "Original: \"{}\"\n"
+                           "Modified: \"{}\"\n"
+                           "========",
+                           IsRaw ? "raw" : "diffink",
+                           Program.get<std::string>("--matcher"),
+                           Program.get<std::string>("--language"),
+                           Program.get<std::string>("original"),
+                           Program.get<std::string>("modified"))
+            << std::endl;
+}
+
 void CommandLineInterface::makeReport(
     diffink::ExtendedEditScript &&Script) const {
   ScriptExporter Exporter(Script);
@@ -446,22 +455,15 @@ void CommandLineInterface::run() {
   setFormats(Program.get<std::vector<std::string>>("--format"));
   setOutputDirectory(Program.get<std::string>("--output"));
   IsRaw = Program.get<bool>("--raw");
+
   if (Program.get<bool>("--log"))
     setLogger();
+  logMeta();
 
-  if (Logger)
-    *Logger << std::format("DiffInk method: {}\n"
-                           "Matcher: {}\n"
-                           "Language: {}\n"
-                           "Original code file: {}\n"
-                           "Modified code file: {}\n"
-                           "========",
-                           IsRaw ? "raw" : "diffink",
-                           Program.get<std::string>("--matcher"),
-                           Program.get<std::string>("--language"),
-                           Program.get<std::string>("original"),
-                           Program.get<std::string>("modified"))
-            << std::endl;
+  OldCode = std::make_unique<diffink::SourceCode>(
+      read(Program.get<std::string>("original")));
+  NewCode = std::make_unique<diffink::SourceCode>(
+      read(Program.get<std::string>("modified")));
 
   if (IsRaw)
     makeReport(runRawDiff());

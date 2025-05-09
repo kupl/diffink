@@ -124,6 +124,8 @@ private:
 
   diffink::ExtendedEditScript runRawDiff();
 
+  void logMeta();
+
   void makeReport(diffink::ExtendedEditScript &&Script) const;
 
 public:
