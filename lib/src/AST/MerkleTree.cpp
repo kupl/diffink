@@ -139,6 +139,7 @@ void MerkleTree::parse(TSParser &Parser, const SourceCode &Code) {
   RawTree.reset(ts_parser_parse_string(&Parser, nullptr, Code.getContent(),
                                        Code.getSize()));
   Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code, Config);
+  Root->makeStructuralHashRecursively();
 }
 
 void MerkleTree::incparse(TSParser &Parser, MerkleTree &OldTree,

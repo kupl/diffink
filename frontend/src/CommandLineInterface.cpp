@@ -263,8 +263,8 @@ void CommandLineInterface::setParser(const std::string &Arg) {
 void CommandLineInterface::setMatcher(const std::string &Arg) {
   if (Arg == "gumtree-simple")
     Matcher = diffink::makeGumtreeSimple();
-  else if (Arg == "gumtree-opt-1000")
-    Matcher = diffink::makeGumtreeOptimal(1000);
+  else if (Arg == "gumtree-opt")
+    Matcher = diffink::makeGumtreeOptimal();
   else if (Arg == "gumtree-opt-inf")
     Matcher =
         diffink::makeGumtreeOptimal(std::numeric_limits<std::size_t>::max());
@@ -335,10 +335,9 @@ diffink::ExtendedEditScript CommandLineInterface::runDiffInk() {
   {
     auto Start = std::chrono::steady_clock::now();
     OldTree.parse(Parser->get(), *OldCode);
-    std::cout << OldTree.getRoot().toStringRecursively() << std::endl;
+    auto End = std::chrono::steady_clock::now();
 
     if (Logger) {
-      auto End = std::chrono::steady_clock::now();
       auto Time =
           std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
               .count();
@@ -351,9 +350,9 @@ diffink::ExtendedEditScript CommandLineInterface::runDiffInk() {
     auto Start = std::chrono::steady_clock::now();
     NewTree.incparse(Parser->get(), OldTree, *OldCode, *NewCode,
                      diffink::diffText(*OldCode, *NewCode));
+    auto End = std::chrono::steady_clock::now();
 
     if (Logger) {
-      auto End = std::chrono::steady_clock::now();
       auto Time =
           std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
               .count();
@@ -365,9 +364,9 @@ diffink::ExtendedEditScript CommandLineInterface::runDiffInk() {
 
   auto Start = std::chrono::steady_clock::now();
   auto Script = diffink::TreeDiff::runDiffInk(Matcher.get(), OldTree, NewTree);
+  auto End = std::chrono::steady_clock::now();
 
   if (Logger) {
-    auto End = std::chrono::steady_clock::now();
     auto Time =
         std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
             .count();
@@ -382,9 +381,9 @@ diffink::ExtendedEditScript CommandLineInterface::runRawDiff() {
   {
     auto Start = std::chrono::steady_clock::now();
     OldTree.parse(Parser->get(), *OldCode);
+    auto End = std::chrono::steady_clock::now();
 
     if (Logger) {
-      auto End = std::chrono::steady_clock::now();
       auto Time =
           std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
               .count();
@@ -396,9 +395,9 @@ diffink::ExtendedEditScript CommandLineInterface::runRawDiff() {
   {
     auto Start = std::chrono::steady_clock::now();
     NewTree.parse(Parser->get(), *NewCode);
+    auto End = std::chrono::steady_clock::now();
 
     if (Logger) {
-      auto End = std::chrono::steady_clock::now();
       auto Time =
           std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
               .count();
@@ -410,9 +409,9 @@ diffink::ExtendedEditScript CommandLineInterface::runRawDiff() {
 
   auto Start = std::chrono::steady_clock::now();
   auto Script = diffink::TreeDiff::runDiff(Matcher.get(), OldTree, NewTree);
+  auto End = std::chrono::steady_clock::now();
 
   if (Logger) {
-    auto End = std::chrono::steady_clock::now();
     auto Time =
         std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
             .count();

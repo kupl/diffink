@@ -79,6 +79,9 @@
 
 class CommandLineInterface {
 private:
+  constexpr static const char *ProjectName = "DiffInk";
+  constexpr static const char *ProjectVersion = "1.0";
+
   using ExporterType = std::function<void(const ScriptExporter &)>;
 
   int argc;
@@ -130,7 +133,7 @@ private:
 
 public:
   CommandLineInterface(int argc, char *argv[]) noexcept
-      : argc{argc}, argv{argv}, Program("DiffInk", "1.0") {}
+      : argc{argc}, argv{argv}, Program(ProjectName, ProjectVersion) {}
 
   void run();
 };
