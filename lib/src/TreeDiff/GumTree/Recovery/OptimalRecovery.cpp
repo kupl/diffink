@@ -6,7 +6,7 @@ int OptimalRecovery::computeUpdateCost(VirtualNode *Left,
                                        VirtualNode *Right) const {
   if (Left->Original.getType() != Right->Original.getType())
     return std::numeric_limits<int>::max();
-  return HashNode::isExactlyEqual(Left->Original, Right->Original) ? 0 : 1;
+  return HashNode::eqaulExactly(Left->Original, Right->Original) ? 0 : 1;
 }
 
 void OptimalRecovery::tryMapping(TreeDiff &Mapping, VirtualNode *Old,

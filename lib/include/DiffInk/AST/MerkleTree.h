@@ -11,7 +11,7 @@ class MerkleTree {
 private:
   std::unique_ptr<HashNode> Root;
   std::unique_ptr<TSTree, decltype(&ts_tree_delete)> RawTree;
-  HashNode::BuildConfig Config;
+  // HashNode::BuildConfig Config;
 
   std::vector<std::pair<const HashNode *, const HashNode *>> Mapping;
   std::unordered_set<const HashNode *> UncommonNodes;
@@ -42,17 +42,17 @@ public:
                 const SourceCode &OldCode, const SourceCode &Code,
                 const EditSequence &Seq);
 
-  void setFlattened(const std::unordered_set<std::string> &Flattened) {
-    Config.Flattened = Flattened;
-  }
+  // void setFlattened(const std::unordered_set<std::string> &Flattened) {
+  //   Config.Flattened = Flattened;
+  // }
 
-  void setAliased(const std::unordered_set<std::string> &Aliased) {
-    Config.Aliased = Aliased;
-  }
+  // void setAliased(const std::unordered_set<std::string> &Aliased) {
+  //   Config.Aliased = Aliased;
+  // }
 
-  void setIgnored(const std::unordered_set<std::string> &Ignored) {
-    Config.Ignored = Ignored;
-  }
+  // void setIgnored(const std::unordered_set<std::string> &Ignored) {
+  //   Config.Ignored = Ignored;
+  // }
 
   const HashNode &getRoot() const noexcept { return *Root; }
 

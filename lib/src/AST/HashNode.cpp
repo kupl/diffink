@@ -14,29 +14,48 @@ std::string HashNode::UTF8Range::toString() const {
                      EndPos.row + 1, EndPos.column + 1);
 }
 
+// void HashNode::build(const SourceCode &Code, TSTreeCursor &Cursor,
+//                      HashNode &Parent, const BuildConfig &Config) {
+//   auto Node = ts_tree_cursor_current_node(&Cursor);
+//   if (ts_node_is_missing(Node))
+//     return;
+//   std::string NodeType{ts_node_type(Node)};
+
+//   if (Config.Ignored.contains(NodeType))
+//     return;
+//   bool IsFlattened = Config.Flattened.contains(NodeType);
+//   auto AliasIter = Config.Aliased.find(NodeType);
+//   if (AliasIter != Config.Aliased.cend())
+//     NodeType = *AliasIter;
+
+//   if (!ts_tree_cursor_goto_first_child(&Cursor))
+//     Parent.Children.emplace_back(Node, std::move(NodeType), Code, true);
+//   else {
+//     auto &CurNode =
+//         Parent.Children.emplace_back(Node, std::move(NodeType), Code, false);
+//     if (!IsFlattened)
+//       do
+//         build(Code, Cursor, CurNode, Config);
+//       while (ts_tree_cursor_goto_next_sibling(&Cursor));
+//     ts_tree_cursor_goto_parent(&Cursor);
+//   }
+// }
+
 void HashNode::build(const SourceCode &Code, TSTreeCursor &Cursor,
-                     HashNode &Parent, const BuildConfig &Config) {
+                     HashNode &Parent) {
   auto Node = ts_tree_cursor_current_node(&Cursor);
   if (ts_node_is_missing(Node))
     return;
   std::string NodeType{ts_node_type(Node)};
-
-  if (Config.Ignored.contains(NodeType))
-    return;
-  bool IsFlattened = Config.Flattened.contains(NodeType);
-  auto AliasIter = Config.Aliased.find(NodeType);
-  if (AliasIter != Config.Aliased.cend())
-    NodeType = *AliasIter;
 
   if (!ts_tree_cursor_goto_first_child(&Cursor))
     Parent.Children.emplace_back(Node, std::move(NodeType), Code, true);
   else {
     auto &CurNode =
         Parent.Children.emplace_back(Node, std::move(NodeType), Code, false);
-    if (!IsFlattened)
-      do
-        build(Code, Cursor, CurNode, Config);
-      while (ts_tree_cursor_goto_next_sibling(&Cursor));
+    do
+      build(Code, Cursor, CurNode);
+    while (ts_tree_cursor_goto_next_sibling(&Cursor));
     ts_tree_cursor_goto_parent(&Cursor);
   }
 }
@@ -113,9 +132,28 @@ std::string HashNode::toStringRecursively(std::size_t Indent) const {
   return Buffer;
 }
 
+// std::unique_ptr<HashNode> HashNode::build(TSNode RootNode,
+//                                           const SourceCode &Code,
+//                                           const BuildConfig &Config) {
+//   if (ts_node_is_null(RootNode))
+//     return nullptr;
+
+//   auto Root =
+//       std::make_unique<HashNode>(RootNode, ts_node_type(RootNode), Code,
+//       false);
+//   auto Cursor = ts_tree_cursor_new(RootNode);
+//   if (ts_tree_cursor_goto_first_child(&Cursor))
+//     do
+//       build(Code, Cursor, *Root, Config);
+//     while (ts_tree_cursor_goto_next_sibling(&Cursor));
+//   ts_tree_cursor_delete(&Cursor);
+
+//   Root->makeMetadataRecursively();
+//   return Root;
+// }
+
 std::unique_ptr<HashNode> HashNode::build(TSNode RootNode,
-                                          const SourceCode &Code,
-                                          const BuildConfig &Config) {
+                                          const SourceCode &Code) {
   if (ts_node_is_null(RootNode))
     return nullptr;
 
@@ -124,7 +162,7 @@ std::unique_ptr<HashNode> HashNode::build(TSNode RootNode,
   auto Cursor = ts_tree_cursor_new(RootNode);
   if (ts_tree_cursor_goto_first_child(&Cursor))
     do
-      build(Code, Cursor, *Root, Config);
+      build(Code, Cursor, *Root);
     while (ts_tree_cursor_goto_next_sibling(&Cursor));
   ts_tree_cursor_delete(&Cursor);
 

@@ -22,11 +22,11 @@ public:
     std::string toString() const;
   };
 
-  struct BuildConfig {
-    std::unordered_set<std::string> Flattened;
-    std::unordered_set<std::string> Aliased;
-    std::unordered_set<std::string> Ignored;
-  };
+  // struct BuildConfig {
+  //   std::unordered_set<std::string> Flattened;
+  //   std::unordered_set<std::string> Aliased;
+  //   std::unordered_set<std::string> Ignored;
+  // };
 
 private:
   const std::string Type;
@@ -45,8 +45,11 @@ private:
   void toStringRecursively(std::string &Buffer, std::size_t Depth,
                            std::size_t Indent) const;
 
+  // static void build(const SourceCode &Code, TSTreeCursor &Cursor,
+  //                   HashNode &Parent, const BuildConfig &Config);
+
   static void build(const SourceCode &Code, TSTreeCursor &Cursor,
-                    HashNode &Parent, const BuildConfig &Config);
+                    HashNode &Parent);
 
   // Metadata = {Height, Size, ExactHash}
   void makeMetadataRecursively();
@@ -84,17 +87,20 @@ public:
 
   std::string toStringRecursively(std::size_t Indent = DefaultIndent) const;
 
-  static std::unique_ptr<HashNode>
-  build(TSNode RootNode, const SourceCode &Code, const BuildConfig &Config);
+  // static std::unique_ptr<HashNode>
+  // build(TSNode RootNode, const SourceCode &Code, const BuildConfig &Config);
 
-  static bool isExactlyEqual(const HashNode &Left,
-                             const HashNode &Right) noexcept {
+  static std::unique_ptr<HashNode> build(TSNode RootNode,
+                                         const SourceCode &Code);
+
+  static bool eqaulExactly(const HashNode &Left,
+                           const HashNode &Right) noexcept {
     return Left.ExactHash.high64 == Right.ExactHash.high64 &&
            Left.ExactHash.low64 == Right.ExactHash.low64;
   }
 
-  static bool isStructurallyEqual(const HashNode &Left,
-                                  const HashNode &Right) noexcept {
+  static bool equalStructurally(const HashNode &Left,
+                                const HashNode &Right) noexcept {
     return Left.StructuralHash.high64 == Right.StructuralHash.high64 &&
            Left.StructuralHash.low64 == Right.StructuralHash.low64;
   }

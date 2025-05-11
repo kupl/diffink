@@ -80,7 +80,7 @@
 class CommandLineInterface {
 private:
   constexpr static const char *ProjectName = "DiffInk";
-  constexpr static const char *ProjectVersion = "1.0";
+  constexpr static const char *ProjectVersion = "v0.0";
 
   using ExporterType = std::function<void(const ScriptExporter &)>;
 

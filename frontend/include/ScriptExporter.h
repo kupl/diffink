@@ -22,7 +22,7 @@ public:
   exportAsHTML(const diffink::SourceCode &OldSrc,
                const diffink::SourceCode &NewSrc) const;
 
-  nlohmann::json exportAsJSON() const;
+  nlohmann::ordered_json exportAsJSON() const;
 };
 
 #endif // FRONTEND_SCRIPTEXPORTER_H

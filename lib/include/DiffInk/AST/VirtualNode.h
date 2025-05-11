@@ -24,7 +24,7 @@ struct VirtualNode {
 
   std::size_t findChild(VirtualNode *Child);
 
-  static bool isEqual(const VirtualNode *Left, const VirtualNode *Right) {
+  static bool eqaul(const VirtualNode *Left, const VirtualNode *Right) {
     return Left->VirtualHash.high64 == Right->VirtualHash.high64 &&
            Left->VirtualHash.low64 == Right->VirtualHash.low64;
   }

@@ -82,8 +82,8 @@ void SimpleRecovery::matchUnique(TreeDiff &Mapping, VirtualNode *Old,
 
 void SimpleRecovery::match(TreeDiff &Mapping, VirtualNode *Old,
                            VirtualNode *New) {
-  matchLcs(Mapping, Old, New, HashNode::isExactlyEqual);
-  matchLcs(Mapping, Old, New, HashNode::isStructurallyEqual);
+  matchLcs(Mapping, Old, New, HashNode::eqaulExactly);
+  matchLcs(Mapping, Old, New, HashNode::equalStructurally);
   matchUnique(Mapping, Old, New);
 }
 

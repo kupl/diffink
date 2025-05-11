@@ -50,8 +50,8 @@ void GreedyTopDown::match(TreeDiff &Mapping,
 
     for (auto OldSubtree : OldSubtrees)
       for (auto NewSubtree : NewSubtrees)
-        if (HashNode::isExactlyEqual(OldSubtree->Original,
-                                     NewSubtree->Original)) {
+        if (HashNode::eqaulExactly(OldSubtree->Original,
+                                   NewSubtree->Original)) {
           OldToNewCandidates[OldSubtree].push_back(NewSubtree);
           NewToOldCandidates[NewSubtree].push_back(OldSubtree);
           MappedCandidates.insert(OldSubtree);

@@ -258,42 +258,48 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
   return {OldBuf, NewBuf};
 }
 
-nlohmann::json ScriptExporter::exportAsJSON() const {
-  auto Buffer = nlohmann::json::array();
+nlohmann::ordered_json ScriptExporter::exportAsJSON() const {
+  using json = nlohmann::ordered_json;
+  auto Buffer = json::array();
   for (const auto &Action : Script) {
     std::visit(
         [&Buffer](const auto &Action) {
           using T = std::decay_t<decltype(Action)>;
           if constexpr (std::is_same_v<T, diffink::edit_action::InsertNode>)
-            Buffer.push_back({{"action", "insert-node"},
-                              {"insert", Action.Leaf.toString()},
-                              {"to", Action.Parent.toString()},
-                              {"at", Action.Index}});
+            Buffer.push_back(json{{"action", "insert-node"},
+                                  {"insert", Action.Leaf.toString()},
+                                  {"to", Action.Parent.toString()},
+                                  {"at", Action.Index}});
+
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::DeleteNode>)
-            Buffer.push_back({{"action", "delete-node"},
-                              {"delete", Action.Leaf.toString()}});
+            Buffer.push_back(json{{"action", "delete-node"},
+                                  {"delete", Action.Leaf.toString()}});
+
           else if constexpr (std::is_same_v<T, diffink::edit_action::MoveTree>)
-            Buffer.push_back({{"action", "move-tree"},
-                              {"move", Action.Subtree.toString()},
-                              {"to", Action.Parent.toString()},
-                              {"at", Action.Index},
-                              {"moved", Action.MovedSubtree.toString()}});
+            Buffer.push_back(json{{"action", "move-tree"},
+                                  {"move", Action.Subtree.toString()},
+                                  {"to", Action.Parent.toString()},
+                                  {"at", Action.Index},
+                                  {"moved", Action.MovedSubtree.toString()}});
+
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::UpdateNode>)
-            Buffer.push_back({{"action", "update-node"},
-                              {"replace", Action.Leaf.toString()},
-                              {"by", Action.UpdatedLeaf.toString()}});
+            Buffer.push_back(json{{"action", "update-node"},
+                                  {"replace", Action.Leaf.toString()},
+                                  {"by", Action.UpdatedLeaf.toString()}});
+
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::InsertTree>)
-            Buffer.push_back({{"action", "insert-tree"},
-                              {"insert", Action.Subtree.toString()},
-                              {"to", Action.Parent.toString()},
-                              {"at", Action.Index}});
+            Buffer.push_back(json{{"action", "insert-tree"},
+                                  {"insert", Action.Subtree.toString()},
+                                  {"to", Action.Parent.toString()},
+                                  {"at", Action.Index}});
+
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::DeleteTree>)
-            Buffer.push_back({{"action", "delete-tree"},
-                              {"delete", Action.Subtree.toString()}});
+            Buffer.push_back(json{{"action", "delete-tree"},
+                                  {"delete", Action.Subtree.toString()}});
         },
         Action);
   }

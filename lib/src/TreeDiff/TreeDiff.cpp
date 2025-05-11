@@ -19,12 +19,12 @@ void TreeDiff::matchDiffInk(Matcher *Mat, const MerkleTree &Old,
   build(New, NewTree, UncommonNewNodes, New.getRoot(), NewTree.getRoot());
 
   earlyMatching(New);
-
   for (auto Node : UncommonOldNodes)
     OldTree.buildSubtree(Node);
   for (auto Node : UncommonNewNodes)
     NewTree.buildSubtree(Node);
-  Mat->match(*this, UncommonOldNodes, UncommonNewNodes);
+  if (!UncommonOldNodes.empty() && !UncommonNewNodes.empty())
+    Mat->match(*this, UncommonOldNodes, UncommonNewNodes);
 }
 
 void TreeDiff::earlyMatching(const MerkleTree &New) {
@@ -36,22 +36,21 @@ void TreeDiff::earlyMatching(const MerkleTree &New) {
     auto OldNodeCopy = VirtualMap[OldNode];
     auto NewNodeCopy = VirtualMap[NewNode];
     insertMapping(OldNodeCopy, NewNodeCopy);
-
     if (OldNode->isLeaf() && NewNode->isLeaf() &&
-        !HashNode::isExactlyEqual(*OldNode, *NewNode))
-      if (VirtualNode ::isEqual(NewNodeCopy->Parent, OldNodeCopy->Parent))
-        CrossMappingCandidates[NewNodeCopy->Parent->VirtualHeight].insert(
-            NewNodeCopy->Parent);
+        !HashNode::eqaulExactly(*OldNode, *NewNode) &&
+        VirtualNode::eqaul(NewNodeCopy->Parent, OldNodeCopy->Parent))
+      CrossMappingCandidates[NewNodeCopy->Parent->VirtualHeight].insert(
+          NewNodeCopy->Parent);
   }
 
   for (auto Node : UncommonNewNodes)
-    if (VirtualNode ::isEqual(Node->Parent, findNewToOldMapping(Node->Parent)))
+    if (VirtualNode::eqaul(Node->Parent, findNewToOldMapping(Node->Parent)))
       CrossMappingCandidates[Node->Parent->VirtualHeight].insert(Node->Parent);
 
   for (std::size_t Height{1}; Height != CrossMappingCandidates.size(); ++Height)
     for (auto Node : CrossMappingCandidates[Height])
-      if (Node->Parent && VirtualNode ::isEqual(
-                              Node->Parent, findNewToOldMapping(Node->Parent)))
+      if (Node->Parent &&
+          VirtualNode::eqaul(Node->Parent, findNewToOldMapping(Node->Parent)))
         CrossMappingCandidates[Node->Parent->VirtualHeight].insert(
             Node->Parent);
 
@@ -68,7 +67,7 @@ void TreeDiff::earlyMatching(const MerkleTree &New) {
 
       for (auto AltIter = std::next(Iter); AltIter != Candidates->cend();
            ++AltIter)
-        if (VirtualNode ::isEqual(Node, *AltIter)) {
+        if (VirtualNode::eqaul(Node, *AltIter)) {
           auto AltMax = countCommons(*AltIter, Partner);
           if (AltMax > Max) {
             Max = AltMax;
@@ -93,7 +92,7 @@ void TreeDiff::earlyMatching(const MerkleTree &New) {
 
     if (Index < ParentPartner->Children.size()) {
       auto Partner = ParentPartner->Children[Index];
-      if (HashNode::isExactlyEqual(Partner->Original, Node->Original))
+      if (HashNode::eqaulExactly(Partner->Original, Node->Original))
         insertMapping(Partner, Node);
     }
   }
@@ -104,7 +103,7 @@ std::size_t TreeDiff::countCommons(VirtualNode *Left,
   std::size_t Count{0};
   VirtualNode::traversePostOrder(
       Left, Right, [&Count](VirtualNode *Left, VirtualNode *Right) {
-        if (HashNode::isExactlyEqual(Left->Original, Right->Original))
+        if (HashNode::eqaulExactly(Left->Original, Right->Original))
           ++Count;
       });
   return Count;
@@ -125,7 +124,6 @@ void TreeDiff::build(const MerkleTree &OriginalTree, VirtualTree &TreeCopy,
 
   for (auto &Child : OriginalNode.getChildren()) {
     auto Temp = TreeCopy.pushBack(Child, NodeCopy);
-
     if (OriginalTree.isUncommon(Child)) {
       Temp->VirtualHash = UncommonSymbolHash;
       ChangeSet.push_back(Temp);
@@ -139,9 +137,7 @@ void TreeDiff::build(const MerkleTree &OriginalTree, VirtualTree &TreeCopy,
         Hashes.push_back(Temp->VirtualHash);
         NodeCopy->VirtualHeight =
             std::max(NodeCopy->VirtualHeight, Temp->VirtualHeight + 1);
-      }
-
-      else
+      } else
         Hashes.push_back(Child.getStructuralHash());
     }
   }
