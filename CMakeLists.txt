@@ -22,12 +22,10 @@ option(LANG_JAVA "Enable Java language support" OFF)
 option(LANG_JAVASCRIPT "Enable JavaScript language support" OFF)
 option(LANG_JSON "Enable JSON language support" OFF)
 option(LANG_JULIA "Enable Julia language support" OFF)
-option(LANG_PHP "Enable PHP language support" OFF)
 option(LANG_PYTHON "Enable Python language support" OFF)
 option(LANG_RUBY "Enable Ruby language support" OFF)
 option(LANG_RUST "Enable Rust language support" OFF)
 option(LANG_SCALA "Enable Scala language support" OFF)
-option(LANG_TYPESCRIPT "Enable TypeScript language support" OFF)
 
 # Include
 include_directories(
@@ -149,15 +147,6 @@ if(LANG_JULIA)
   )
   list(APPEND EXTERNAL_SRC ${JULIA_SRC})
 endif()
-if(LANG_PHP)
-  include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/externals/tree-sitter-php/bindings/c
-  )
-  file(GLOB PHP_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/externals/tree-sitter-php/php/src/*.c
-  )
-  list(APPEND EXTERNAL_SRC ${PHP_SRC})
-endif()
 if(LANG_PYTHON)
   include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/tree-sitter-python/bindings/c
@@ -193,15 +182,6 @@ if(LANG_SCALA)
     ${CMAKE_CURRENT_SOURCE_DIR}/externals/tree-sitter-scala/src/*.c
   )
   list(APPEND EXTERNAL_SRC ${SCALA_SRC})
-endif()
-if(LANG_TYPESCRIPT)
-  include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/externals/tree-sitter-typescript/bindings/c
-  )
-  file(GLOB TYPESCRIPT_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/externals/tree-sitter-typescript/typescript/src/*.c
-  )
-  list(APPEND EXTERNAL_SRC ${TYPESCRIPT_SRC})
 endif()
 
 # Executable
@@ -255,10 +235,6 @@ if(LANG_JULIA)
   message(STATUS "DiffInk: Julia language support is enabled.")
   target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE DIFFINK_LANGUAGE_SUPPORT_JULIA)
 endif()
-if(LANG_PHP)
-  message(STATUS "DiffInk: PHP language support is enabled.")
-  target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE DIFFINK_LANGUAGE_SUPPORT_PHP)
-endif()
 if(LANG_PYTHON)
   message(STATUS "DiffInk: Python language support is enabled.")
   target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE DIFFINK_LANGUAGE_SUPPORT_PYTHON)
@@ -274,10 +250,6 @@ endif()
 if(LANG_SCALA)
   message(STATUS "DiffInk: Scala language support is enabled.")
   target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE DIFFINK_LANGUAGE_SUPPORT_SCALA)
-endif()
-if(LANG_TYPESCRIPT)
-  message(STATUS "DiffInk: TypeScript language support is enabled.")
-  target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE DIFFINK_LANGUAGE_SUPPORT_TYPESCRIPT)
 endif()
 
 # Binary path

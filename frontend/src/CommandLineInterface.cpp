@@ -38,9 +38,6 @@ void CommandLineInterface::initArguments() {
 #ifdef DIFFINK_LANGUAGE_SUPPORT_JULIA
   Languages.emplace_back("julia");
 #endif
-#ifdef DIFFINK_LANGUAGE_SUPPORT_PHP
-  Languages.emplace_back("php");
-#endif
 #ifdef DIFFINK_LANGUAGE_SUPPORT_PYTHON
   Languages.emplace_back("python");
 #endif
@@ -52,9 +49,6 @@ void CommandLineInterface::initArguments() {
 #endif
 #ifdef DIFFINK_LANGUAGE_SUPPORT_SCALA
   Languages.emplace_back("scala");
-#endif
-#ifdef DIFFINK_LANGUAGE_SUPPORT_TYPESCRIPT
-  Languages.emplace_back("typescript");
 #endif
 
   std::string LangHelp{"specifies language of input codes\n"
@@ -75,10 +69,11 @@ void CommandLineInterface::initArguments() {
   }
 
   Program.add_argument("-m", "--matcher")
-      .help("selects matcher algorithm: gumtree-simple, gumtree-opt, "
-            "gumtree-opt-inf")
-      .choices("gumtree-simple", "gumtree-opt", "gumtree-opt-inf")
-      .default_value(std::string{"gumtree-simple"});
+      .help("selects matcher algorithm: diffink-simple, diffink-opt, "
+            "gumtree-simple, gumtree-opt, gumtree-opt-inf")
+      .choices("diffink-simple", "diffink-opt", "gumtree-simple", "gumtree-opt",
+               "gumtree-opt-inf")
+      .default_value(std::string{"diffink-simple"});
 
   Program.add_argument("-f", "--format")
       .help("selects diff report format: text, html, json")
@@ -89,13 +84,8 @@ void CommandLineInterface::initArguments() {
       .help("specifies directory to save diffink outputs")
       .default_value(std::string{"diffink_reports/"});
 
-  Program.add_argument("-r", "--raw")
-      .help("disables DiffInk's tree differencing algorithms")
-      .implicit_value(true)
-      .default_value(false);
-
   Program.add_argument("--log")
-      .help("log file will be saved as \"${OUTPUT}/log\"")
+      .help("save log file as \"${OUTPUT}/log\"")
       .implicit_value(true)
       .default_value(false);
 
@@ -212,12 +202,6 @@ void CommandLineInterface::setParser(const std::string &Arg) {
     return;
   }
 #endif
-#ifdef DIFFINK_LANGUAGE_SUPPORT_PHP
-  if (Arg == "php") {
-    Parser = std::make_unique<diffink::SmartParser>(tree_sitter_php);
-    return;
-  }
-#endif
 #ifdef DIFFINK_LANGUAGE_SUPPORT_PYTHON
   if (Arg == "python") {
     Parser = std::make_unique<diffink::SmartParser>(tree_sitter_python);
@@ -242,24 +226,27 @@ void CommandLineInterface::setParser(const std::string &Arg) {
     return;
   }
 #endif
-#ifdef DIFFINK_LANGUAGE_SUPPORT_TYPESCRIPT
-  if (Arg == "typescript") {
-    Parser = std::make_unique<diffink::SmartParser>(tree_sitter_typescript);
-    return;
-  }
-#endif
   throw std::invalid_argument("Invalid language: " + Arg);
 }
 
 void CommandLineInterface::setMatcher(const std::string &Arg) {
-  if (Arg == "gumtree-simple")
+  if (Arg == "diffink-simple") {
+    ApplyDiffink = true;
     Matcher = diffink::makeGumtreeSimple();
-  else if (Arg == "gumtree-opt")
+  } else if (Arg == "diffink-opt") {
+    ApplyDiffink = true;
     Matcher = diffink::makeGumtreeOptimal();
-  else if (Arg == "gumtree-opt-inf")
+  } else if (Arg == "gumtree-simple") {
+    ApplyDiffink = false;
+    Matcher = diffink::makeGumtreeSimple();
+  } else if (Arg == "gumtree-opt") {
+    ApplyDiffink = false;
+    Matcher = diffink::makeGumtreeOptimal();
+  } else if (Arg == "gumtree-opt-inf") {
+    ApplyDiffink = false;
     Matcher =
         diffink::makeGumtreeOptimal(std::numeric_limits<std::size_t>::max());
-  else
+  } else
     throw std::invalid_argument("Invalid matcher: " + Arg);
 }
 
@@ -415,13 +402,11 @@ diffink::ExtendedEditScript CommandLineInterface::runRawDiff() {
 
 void CommandLineInterface::logMeta() {
   if (Logger)
-    *Logger << std::format("Method: {}\n"
-                           "Matcher: {}\n"
+    *Logger << std::format("Matcher: {}\n"
                            "Language: {}\n"
                            "Original: \"{}\"\n"
                            "Modified: \"{}\"\n"
                            "========",
-                           IsRaw ? "raw" : "diffink",
                            Program.get<std::string>("--matcher"),
                            Program.get<std::string>("--language"),
                            Program.get<std::string>("original"),
@@ -444,7 +429,6 @@ void CommandLineInterface::run() {
   setMatcher(Program.get<std::string>("--matcher"));
   setFormats(Program.get<std::vector<std::string>>("--format"));
   setOutputDirectory(Program.get<std::string>("--output"));
-  IsRaw = Program.get<bool>("--raw");
 
   if (Program.get<bool>("--log"))
     setLogger();
@@ -455,7 +439,7 @@ void CommandLineInterface::run() {
   NewCode = std::make_unique<diffink::SourceCode>(
       read(Program.get<std::string>("modified")));
 
-  if (IsRaw)
+  if (ApplyDiffink)
     makeReport(runRawDiff());
   else
     makeReport(runDiffInk());

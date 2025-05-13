@@ -55,9 +55,6 @@
 #ifdef DIFFINK_LANGUAGE_SUPPORT_JULIA
 #include <tree-sitter-julia.h>
 #endif
-#ifdef DIFFINK_LANGUAGE_SUPPORT_PHP
-#include <tree-sitter-php.h>
-#endif
 #ifdef DIFFINK_LANGUAGE_SUPPORT_PYTHON
 #include <tree-sitter-python.h>
 #endif
@@ -69,9 +66,6 @@
 #endif
 #ifdef DIFFINK_LANGUAGE_SUPPORT_SCALA
 #include <tree-sitter-scala.h>
-#endif
-#ifdef DIFFINK_LANGUAGE_SUPPORT_TYPESCRIPT
-#include <tree-sitter-typescript.h>
 #endif
 
 class CommandLineInterface {
@@ -86,10 +80,10 @@ private:
   argparse::ArgumentParser Program;
   std::filesystem::path DiffinkDirectory;
   std::unique_ptr<diffink::SmartParser> Parser;
+  bool ApplyDiffink;
   std::unique_ptr<diffink::TreeDiff::Matcher> Matcher;
   std::vector<ExporterType> Formats;
   std::filesystem::path OutputDirectory;
-  bool IsRaw;
   std::optional<std::ofstream> Logger;
 
   std::unique_ptr<diffink::SourceCode> OldCode;
