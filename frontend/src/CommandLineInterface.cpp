@@ -38,9 +38,6 @@ void CommandLineInterface::initArguments() {
 #ifdef DIFFINK_LANGUAGE_SUPPORT_JULIA
   Languages.emplace_back("julia");
 #endif
-#ifdef DIFFINK_LANGUAGE_SUPPORT_OCAML
-  Languages.emplace_back("ocaml");
-#endif
 #ifdef DIFFINK_LANGUAGE_SUPPORT_PHP
   Languages.emplace_back("php");
 #endif
@@ -212,12 +209,6 @@ void CommandLineInterface::setParser(const std::string &Arg) {
 #ifdef DIFFINK_LANGUAGE_SUPPORT_JULIA
   if (Arg == "julia") {
     Parser = std::make_unique<diffink::SmartParser>(tree_sitter_julia);
-    return;
-  }
-#endif
-#ifdef DIFFINK_LANGUAGE_SUPPORT_OCAML
-  if (Arg == "ocaml") {
-    Parser = std::make_unique<diffink::SmartParser>(tree_sitter_ocaml);
     return;
   }
 #endif

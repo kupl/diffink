@@ -10,8 +10,8 @@ struct VirtualNode {
   VirtualNode *Parent{nullptr};
   std::vector<VirtualNode *> Children{};
   bool Marker{false};
-  std::size_t VirtualHeight{0};
-  XXH128_hash_t VirtualHash;
+  uint32_t VirtualHeight{0};
+  XXH64_hash_t VirtualHash;
 
   void _makePostOrder(std::vector<VirtualNode *> &PostOrder, VirtualNode *Iter);
 
@@ -25,8 +25,7 @@ struct VirtualNode {
   std::size_t findChild(VirtualNode *Child);
 
   static bool eqaul(const VirtualNode *Left, const VirtualNode *Right) {
-    return Left->VirtualHash.high64 == Right->VirtualHash.high64 &&
-           Left->VirtualHash.low64 == Right->VirtualHash.low64;
+    return Left->VirtualHash == Right->VirtualHash;
   }
 
   template <class Function>

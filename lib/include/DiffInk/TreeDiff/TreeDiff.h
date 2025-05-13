@@ -19,7 +19,7 @@ public:
   };
 
 private:
-  const XXH128_hash_t UncommonSymbolHash{.low64 = 0, .high64 = 0};
+  static constexpr XXH64_hash_t UncommonSymbolHash{0};
 
   VirtualTree OldTree;
   VirtualTree NewTree;

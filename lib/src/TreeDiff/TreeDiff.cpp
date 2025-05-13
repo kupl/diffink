@@ -119,7 +119,7 @@ void TreeDiff::build(const MerkleTree &OriginalTree, VirtualTree &TreeCopy,
   }
   NodeCopy->VirtualHeight = 1;
 
-  std::vector<XXH128_hash_t> Hashes;
+  std::vector<XXH64_hash_t> Hashes;
   Hashes.reserve(OriginalNode.getChildren().size());
 
   for (auto &Child : OriginalNode.getChildren()) {

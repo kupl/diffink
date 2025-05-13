@@ -11,6 +11,10 @@
 
 namespace diffink {
 
+XXH64_hash_t xxhVector(const std::vector<XXH64_hash_t> &data) noexcept;
+
+XXH64_hash_t xxhString(const std::string &data) noexcept;
+
 class HashNode {
 public:
   static constexpr std::size_t DefaultIndent{2};
@@ -32,14 +36,13 @@ private:
   const std::string Type;
   const std::string Label;
   std::list<HashNode> Children;
-  const std::pair<std::string::size_type, std::string::size_type> ByteRange;
+  const std::pair<uint32_t, uint32_t> ByteRange;
   const UTF8Range PosRange;
 
-  std::size_t Height{0};
-  std::size_t Size{1};
-  XXH128_hash_t TypeHash;
-  XXH128_hash_t ExactHash;
-  XXH128_hash_t StructuralHash;
+  uint32_t Height{0};
+  uint32_t Size{1};
+  XXH64_hash_t ExactHash;
+  XXH64_hash_t StructuralHash;
 
 private:
   void toStringRecursively(std::string &Buffer, std::size_t Depth,
@@ -73,13 +76,13 @@ public:
 
   const decltype(ByteRange) &getByteRange() const noexcept { return ByteRange; }
 
-  std::size_t getHeight() const noexcept { return Height; }
+  uint32_t getHeight() const noexcept { return Height; }
 
-  std::size_t getSize() const noexcept { return Size; }
+  uint32_t getSize() const noexcept { return Size; }
 
-  XXH128_hash_t getTypeHash() const noexcept { return TypeHash; }
+  XXH64_hash_t getTypeHash() const noexcept { return xxhString(Type); }
 
-  XXH128_hash_t getStructuralHash() const noexcept { return StructuralHash; }
+  XXH64_hash_t getStructuralHash() const noexcept { return StructuralHash; }
 
   std::vector<const HashNode *> makePostOrder() const;
 
@@ -95,20 +98,14 @@ public:
 
   static bool eqaulExactly(const HashNode &Left,
                            const HashNode &Right) noexcept {
-    return Left.ExactHash.high64 == Right.ExactHash.high64 &&
-           Left.ExactHash.low64 == Right.ExactHash.low64;
+    return Left.ExactHash == Right.ExactHash;
   }
 
   static bool equalStructurally(const HashNode &Left,
                                 const HashNode &Right) noexcept {
-    return Left.StructuralHash.high64 == Right.StructuralHash.high64 &&
-           Left.StructuralHash.low64 == Right.StructuralHash.low64;
+    return Left.StructuralHash == Right.StructuralHash;
   }
 };
-
-XXH128_hash_t xxhVector(const std::vector<XXH128_hash_t> &data);
-
-XXH128_hash_t xxhString(const std::string &data);
 
 } // namespace diffink
 

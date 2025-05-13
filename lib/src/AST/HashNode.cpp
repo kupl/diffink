@@ -71,22 +71,20 @@ HashNode::HashNode(const TSNode &RawNode, std::string &&Type,
                          Code.getUTF8Position(ts_node_end_byte(RawNode))}) {}
 
 void HashNode::makeMetadataRecursively() {
-  TypeHash = xxhString(Type);
   if (Children.empty()) {
-    ExactHash = xxhVector({TypeHash, xxhString(Label)});
+    ExactHash = xxhVector({getTypeHash(), xxhString(Label)});
     return;
   }
 
-  std::vector<XXH128_hash_t> ExactHashes;
+  std::vector<XXH64_hash_t> ExactHashes;
   ExactHashes.reserve(Children.size());
-
   for (auto &Child : Children) {
     Child.makeMetadataRecursively();
     ExactHashes.push_back(Child.ExactHash);
     Height = std::max(Height, Child.Height + 1);
     Size += Child.Size;
   }
-  ExactHash = xxhVector({TypeHash, xxhVector(ExactHashes)});
+  ExactHash = xxhVector({getTypeHash(), xxhVector(ExactHashes)});
 }
 
 void HashNode::makePostOrder(std::vector<const HashNode *> &PostOrder,
@@ -97,19 +95,18 @@ void HashNode::makePostOrder(std::vector<const HashNode *> &PostOrder,
 }
 
 void HashNode::makeStructuralHashRecursively() {
-  if (isLeaf()) {
-    StructuralHash = TypeHash;
+  if (Children.empty()) {
+    StructuralHash = getTypeHash();
     return;
   }
 
-  std::vector<XXH128_hash_t> StructuralHashes;
+  std::vector<XXH64_hash_t> StructuralHashes;
   StructuralHashes.reserve(Children.size());
-
   for (auto &Child : Children) {
     Child.makeStructuralHashRecursively();
     StructuralHashes.push_back(Child.StructuralHash);
   }
-  StructuralHash = xxhVector({TypeHash, xxhVector(StructuralHashes)});
+  StructuralHash = xxhVector({getTypeHash(), xxhVector(StructuralHashes)});
 }
 
 std::vector<const HashNode *> HashNode::makePostOrder() const {
@@ -170,13 +167,13 @@ std::unique_ptr<HashNode> HashNode::build(TSNode RootNode,
   return Root;
 }
 
-XXH128_hash_t xxhVector(const std::vector<XXH128_hash_t> &data) {
-  return XXH128(static_cast<const void *>(data.data()),
-                data.size() * sizeof(XXH128_hash_t), 0);
+XXH64_hash_t xxhVector(const std::vector<XXH64_hash_t> &data) noexcept {
+  return XXH64(static_cast<const void *>(data.data()),
+               data.size() * sizeof(XXH64_hash_t), 0);
 }
 
-XXH128_hash_t xxhString(const std::string &data) {
-  return XXH128(static_cast<const void *>(data.data()), data.size(), 0);
+XXH64_hash_t xxhString(const std::string &data) noexcept {
+  return XXH64(static_cast<const void *>(data.data()), data.size(), 0);
 }
 
 } // namespace diffink

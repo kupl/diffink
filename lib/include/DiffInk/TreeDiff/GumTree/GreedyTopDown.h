@@ -10,10 +10,10 @@ namespace diffink::gumtree {
 
 class GreedyTopDown : public TreeDiff::Matcher {
 private:
-  const std::size_t MinHeight;
+  const uint32_t MinHeight;
 
 public:
-  GreedyTopDown(std::size_t MinHeight = gumtree::DefaultMinHeight,
+  GreedyTopDown(uint32_t MinHeight = gumtree::DefaultMinHeight,
                 float MinDice = gumtree::DefaultMinDice) noexcept
       : TreeDiff::Matcher(), MinHeight{MinHeight} {}
 

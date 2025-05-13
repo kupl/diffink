@@ -6,7 +6,7 @@ void GreedyTopDown::match(TreeDiff &Mapping,
                           const std::vector<VirtualNode *> &Old,
                           const std::vector<VirtualNode *> &New) {
   std::vector<std::pair<VirtualNode *, VirtualNode *>> Candidates;
-  std::map<std::size_t, std::vector<VirtualNode *>> OldQueue, NewQueue;
+  std::map<uint32_t, std::vector<VirtualNode *>> OldQueue, NewQueue;
 
   for (auto Subtree : Old)
     if (Subtree->Original.getHeight() >= MinHeight)

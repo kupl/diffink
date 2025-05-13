@@ -55,9 +55,6 @@
 #ifdef DIFFINK_LANGUAGE_SUPPORT_JULIA
 #include <tree-sitter-julia.h>
 #endif
-#ifdef DIFFINK_LANGUAGE_SUPPORT_OCAML
-#include <tree-sitter-ocaml.h>
-#endif
 #ifdef DIFFINK_LANGUAGE_SUPPORT_PHP
 #include <tree-sitter-php.h>
 #endif
@@ -80,7 +77,7 @@
 class CommandLineInterface {
 private:
   constexpr static const char *ProjectName = "DiffInk";
-  constexpr static const char *ProjectVersion = "v0.0";
+  constexpr static const char *ProjectVersion = "v0.0.0";
 
   using ExporterType = std::function<void(const ScriptExporter &)>;
 

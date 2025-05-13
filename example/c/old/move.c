@@ -1,2 +1,8 @@
-int x = 1 + 2 + 3;
-foo(x, y);
+void main() {
+  int x = 1;
+  if (x) {
+    foo();
+    goo();
+    bar();
+  }
+}

@@ -9,7 +9,7 @@ namespace diffink::gumtree {
 
 class OptimalRecovery : public GreedyBottomUp::Recovery {
 private:
-  const int MaxSize;
+  const uint32_t MaxSize;
 
 private:
   int computeUpdateCost(VirtualNode *Left, VirtualNode *Right) const;
@@ -17,7 +17,7 @@ private:
   void tryMapping(TreeDiff &Mapping, VirtualNode *Old, VirtualNode *New) const;
 
 public:
-  OptimalRecovery(int MaxSize) noexcept
+  OptimalRecovery(uint32_t MaxSize) noexcept
       : GreedyBottomUp::Recovery(), MaxSize{MaxSize} {}
 
   ~OptimalRecovery() = default;

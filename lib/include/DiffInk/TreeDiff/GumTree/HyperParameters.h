@@ -5,11 +5,11 @@
 
 namespace diffink::gumtree {
 
-constexpr std::size_t DefaultMinHeight{1};
+constexpr uint32_t DefaultMinHeight{1};
 
 constexpr double DefaultMinDice{0.5};
 
-constexpr std::size_t DefaultMaxSize{1000};
+constexpr uint32_t DefaultMaxSize{1000};
 
 } // namespace diffink::gumtree
 
