@@ -3,30 +3,19 @@
 
 #include "DiffInk/TreeDiff/GumTree/DiceSimilarity.h"
 #include "DiffInk/TreeDiff/GumTree/HyperParameters.h"
-#include "DiffInk/TreeDiff/TreeDiff.h"
+#include "DiffInk/TreeDiff/GumTree/Recovery/BaseRecovery.h"
 
 namespace diffink::gumtree {
 
 class GreedyBottomUp : public TreeDiff::Matcher {
-public:
-  class Recovery {
-  public:
-    virtual void match(TreeDiff &Mapping, VirtualNode *Old,
-                       VirtualNode *New) = 0;
-    virtual ~Recovery() = default;
-  };
-
 private:
-  std::unique_ptr<Recovery> Heuristic;
   const double MinDice;
 
 private:
   void match(TreeDiff &Mapping, VirtualNode *Node);
 
 public:
-  GreedyBottomUp(std::unique_ptr<Recovery> Heuristic,
-                 double MinDice = DefaultMinDice) noexcept
-      : Heuristic(std::move(Heuristic)), MinDice{MinDice} {}
+  GreedyBottomUp(double MinDice = DefaultMinDice) noexcept : MinDice{MinDice} {}
 
   ~GreedyBottomUp() final = default;
 

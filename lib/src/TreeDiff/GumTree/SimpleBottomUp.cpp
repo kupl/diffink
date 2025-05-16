@@ -45,7 +45,7 @@ void GreedyBottomUp::match(TreeDiff &Mapping, VirtualNode *Node) {
   if (Best) {
     Mapping.insertMapping(Node, Best);
     if (Heuristic)
-      match(Mapping, Node, Best);
+      Heuristic->match(Mapping, Node, Best);
   }
 }
 

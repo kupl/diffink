@@ -75,6 +75,7 @@ std::string ScriptExporter::exportAsString() const {
     Buffer.pop_back();
   return Buffer;
 }
+
 std::pair<std::string, std::string>
 ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
                              const diffink::SourceCode &NewSrc) const {
@@ -102,7 +103,7 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
   constexpr std::string_view UpdateAction{
       R"(<span style="background-color:rgb(255, 255, 127);">)"};
   constexpr std::string_view MoveAction{
-      R"(<span style="background-color:rgb(255, 159, 255);">)"};
+      R"(<span style="background-color:rgb(255, 127, 255);">)"};
   constexpr std::string_view ActionEnd{"</span>"};
 
   constexpr std::string_view AmpChar{"&amp;"};
@@ -111,58 +112,72 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
   constexpr std::string_view DoubleQuoteChar{"&quot;"};
   constexpr std::string_view SingleQuoteChar{"&apos;"};
 
-  std::vector<std::vector<const std::string_view *>> OldTags(
-      OldSrc.getSize() + 1, std::vector<const std::string_view *>());
-  std::vector<std::vector<const std::string_view *>> NewTags(
-      NewSrc.getSize() + 1, std::vector<const std::string_view *>());
+  std::vector<std::vector<const std::string_view *>> OldOpenTags(
+      OldSrc.getSize() + 1, std::vector<const std::string_view *>()),
+      OldCloseTags(OldSrc.getSize() + 1,
+                   std::vector<const std::string_view *>()),
+      NewOpenTags(NewSrc.getSize() + 1,
+                  std::vector<const std::string_view *>()),
+      NewCloseTags(NewSrc.getSize() + 1,
+                   std::vector<const std::string_view *>());
 
   for (const auto &Action : Script) {
     std::visit(
         [&](const auto &Action) {
           using T = std::decay_t<decltype(Action)>;
           if constexpr (std::is_same_v<T, diffink::edit_action::InsertNode>) {
-            NewTags[Action.Leaf.getByteRange().first].push_back(&InsertAction);
-            NewTags[Action.Leaf.getByteRange().second].push_back(&ActionEnd);
+            NewOpenTags[Action.Leaf.getByteRange().first].push_back(
+                &InsertAction);
+            NewCloseTags[Action.Leaf.getByteRange().second].push_back(
+                &ActionEnd);
           }
 
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::DeleteNode>) {
-            OldTags[Action.Leaf.getByteRange().first].push_back(&DeleteAction);
-            OldTags[Action.Leaf.getByteRange().second].push_back(&ActionEnd);
+            OldOpenTags[Action.Leaf.getByteRange().first].push_back(
+                &DeleteAction);
+            OldCloseTags[Action.Leaf.getByteRange().second].push_back(
+                &ActionEnd);
           }
 
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::UpdateNode>) {
-            OldTags[Action.Leaf.getByteRange().first].push_back(&UpdateAction);
-            OldTags[Action.Leaf.getByteRange().second].push_back(&ActionEnd);
-            NewTags[Action.UpdatedLeaf.getByteRange().first].push_back(
+            OldOpenTags[Action.Leaf.getByteRange().first].push_back(
                 &UpdateAction);
-            NewTags[Action.UpdatedLeaf.getByteRange().second].push_back(
+            OldCloseTags[Action.Leaf.getByteRange().second].push_back(
+                &ActionEnd);
+            NewOpenTags[Action.UpdatedLeaf.getByteRange().first].push_back(
+                &UpdateAction);
+            NewCloseTags[Action.UpdatedLeaf.getByteRange().second].push_back(
                 &ActionEnd);
           }
 
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::MoveTree>) {
-            OldTags[Action.Subtree.getByteRange().first].push_back(&MoveAction);
-            OldTags[Action.Subtree.getByteRange().second].push_back(&ActionEnd);
-            NewTags[Action.MovedSubtree.getByteRange().first].push_back(
+            OldOpenTags[Action.Subtree.getByteRange().first].push_back(
                 &MoveAction);
-            NewTags[Action.MovedSubtree.getByteRange().second].push_back(
+            OldCloseTags[Action.Subtree.getByteRange().second].push_back(
+                &ActionEnd);
+            NewOpenTags[Action.MovedSubtree.getByteRange().first].push_back(
+                &MoveAction);
+            NewCloseTags[Action.MovedSubtree.getByteRange().second].push_back(
                 &ActionEnd);
           }
 
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::InsertTree>) {
-            NewTags[Action.Subtree.getByteRange().first].push_back(
+            NewOpenTags[Action.Subtree.getByteRange().first].push_back(
                 &InsertAction);
-            NewTags[Action.Subtree.getByteRange().second].push_back(&ActionEnd);
+            NewCloseTags[Action.Subtree.getByteRange().second].push_back(
+                &ActionEnd);
           }
 
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::DeleteTree>) {
-            OldTags[Action.Subtree.getByteRange().first].push_back(
+            OldOpenTags[Action.Subtree.getByteRange().first].push_back(
                 &DeleteAction);
-            OldTags[Action.Subtree.getByteRange().second].push_back(&ActionEnd);
+            OldCloseTags[Action.Subtree.getByteRange().second].push_back(
+                &ActionEnd);
           }
         },
         Action);
@@ -184,7 +199,9 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
   auto OldCStr = OldSrc.getContent();
 
   for (std::size_t i{0}; i != OldSrc.getSize(); ++i) {
-    for (auto Tag : OldTags[i])
+    for (auto Tag : OldCloseTags[i])
+      OldBuf.append(*Tag);
+    for (auto Tag : OldOpenTags[i])
       OldBuf.append(*Tag);
 
     switch (OldCStr[i]) {
@@ -211,6 +228,8 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
       OldBuf.push_back(OldCStr[i]);
     }
   }
+  for (auto Tag : OldCloseTags[OldSrc.getSize()])
+    OldBuf.append(*Tag);
 
   const uint32_t NewLineEnd{NewSrc.getLOC() + 1};
   const uint32_t NewDigitCount = std::to_string(NewLineEnd).size();
@@ -219,11 +238,10 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
   NewBuf.append(showLineNumber(NewLineNum, NewDigitCount));
   auto NewCStr = NewSrc.getContent();
 
-  for (auto Tag : OldTags[OldSrc.getSize()])
-    OldBuf.append(*Tag);
-
   for (std::size_t i{0}; i != NewSrc.getSize(); ++i) {
-    for (auto Tag : NewTags[i])
+    for (auto Tag : NewOpenTags[i])
+      NewBuf.append(*Tag);
+    for (auto Tag : NewCloseTags[i])
       NewBuf.append(*Tag);
 
     switch (NewCStr[i]) {
@@ -250,7 +268,7 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
       NewBuf.push_back(NewCStr[i]);
     }
   }
-  for (auto Tag : NewTags[NewSrc.getSize()])
+  for (auto Tag : NewCloseTags[NewSrc.getSize()])
     NewBuf.append(*Tag);
 
   OldBuf.append(EndTemplate);

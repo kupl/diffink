@@ -1,4 +1,6 @@
 #include "DiffInk/TreeDiff/TreeDiff.h"
+#include <fstream>
+#include <iostream>
 
 namespace diffink {
 
@@ -23,6 +25,19 @@ void TreeDiff::matchDiffInk(Matcher *Mat, const MerkleTree &Old,
     OldTree.buildSubtree(Node);
   for (auto Node : UncommonNewNodes)
     NewTree.buildSubtree(Node);
+
+  std::ofstream("temp1.txt")
+      << Old.getRoot().toStringRecursively() << std::endl;
+  std::ofstream("temp2.txt")
+      << New.getRoot().toStringRecursively() << std::endl;
+
+  std::cout << "Uncommon Old Nodes:" << std::endl;
+  for (auto Node : UncommonOldNodes)
+    std::cout << Node->Original.toString() << std::endl;
+  std::cout << "Uncommon New Nodes:" << std::endl;
+  for (auto Node : UncommonNewNodes)
+    std::cout << Node->Original.toString() << std::endl;
+
   if (!UncommonOldNodes.empty() && !UncommonNewNodes.empty())
     Mat->match(*this, UncommonOldNodes, UncommonNewNodes);
 }

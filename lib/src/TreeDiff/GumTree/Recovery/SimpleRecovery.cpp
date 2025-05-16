@@ -35,7 +35,7 @@ void SimpleRecovery::matchLcs(TreeDiff &Mapping, VirtualNode *Old,
       VirtualNode::traversePostOrder(
           UnmappedOldChildren[i], UnmappedNewChildren[j],
           [&Mapping](VirtualNode *Old, VirtualNode *New) {
-            Mapping.overrideMapping(Old, New);
+            Mapping.insertMapping(Old, New);
           });
       continue;
     }
