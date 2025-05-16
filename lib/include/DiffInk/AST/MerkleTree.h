@@ -13,6 +13,7 @@ private:
   std::unique_ptr<TSTree, decltype(&ts_tree_delete)> RawTree;
   // HashNode::BuildConfig Config;
 
+  bool Incparsed{false};
   std::vector<std::pair<const HashNode *, const HashNode *>> Mapping;
   std::unordered_set<const HashNode *> UncommonNodes;
   std::unordered_set<const HashNode *> HasUncommonChild;
@@ -39,8 +40,7 @@ public:
   void parse(TSParser &Parser, const SourceCode &Code);
 
   void incparse(TSParser &Parser, MerkleTree &OldTree,
-                const SourceCode &OldCode, const SourceCode &Code,
-                const EditSequence &Seq);
+                const SourceCode &OldCode, const SourceCode &Code);
 
   // void setFlattened(const std::unordered_set<std::string> &Flattened) {
   //   Config.Flattened = Flattened;
@@ -55,6 +55,8 @@ public:
   // }
 
   const HashNode &getRoot() const noexcept { return *Root; }
+
+  bool isIncparsed() const noexcept { return Incparsed; }
 
   const decltype(Mapping) &getMapping() const noexcept { return Mapping; }
 

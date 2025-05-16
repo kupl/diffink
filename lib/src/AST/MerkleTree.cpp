@@ -143,15 +143,18 @@ void MerkleTree::parse(TSParser &Parser, const SourceCode &Code) {
 }
 
 void MerkleTree::incparse(TSParser &Parser, MerkleTree &OldTree,
-                          const SourceCode &OldCode, const SourceCode &Code,
-                          const EditSequence &Seq) {
+                          const SourceCode &OldCode, const SourceCode &Code) {
   clear();
   OldTree.clearMapping();
-
   auto EditedTree = ts_tree_copy(OldTree.RawTree.get());
-  applyEditSequence(OldCode, Code, *EditedTree, Seq);
-  RawTree.reset(ts_parser_parse_string(&Parser, EditedTree, Code.getContent(),
-                                       Code.getSize()));
+  if (applyTextEdits(OldCode, Code, *EditedTree)) {
+    Incparsed = true;
+    RawTree.reset(ts_parser_parse_string(&Parser, EditedTree, Code.getContent(),
+                                         Code.getSize()));
+  } else
+    RawTree.reset(ts_parser_parse_string(&Parser, nullptr, Code.getContent(),
+                                         Code.getSize()));
+
   Root = HashNode::build(ts_tree_root_node(RawTree.get()), Code);
   Root->makeStructuralHashRecursively();
   auto OldCursor = ts_tree_cursor_new(ts_tree_root_node(EditedTree));

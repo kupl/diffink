@@ -2,6 +2,8 @@
 #define DIFFINK_UTILS_TEXTDIFF_H
 
 #include "DiffInk/AST/SourceCode.h"
+#include "DiffInk/Utils/XxhStl.h"
+#include <cstring>
 #include <diff_match_patch.h>
 #include <optional>
 
@@ -14,12 +16,11 @@ struct EditedRange {
   uint32_t NewEndByte;
 };
 
-using EditSequence = std::vector<EditedRange>;
+bool checkIncparsingAvailable(const SourceCode &OldCode,
+                              const SourceCode &NewCode, uint32_t MaxLineDiff);
 
-EditSequence diffText(const SourceCode &OldCode, const SourceCode &NewCode);
-
-void applyEditSequence(const SourceCode &OldCode, const SourceCode &NewCode,
-                       TSTree &EditedTree, const EditSequence &Seq);
+bool applyTextEdits(const SourceCode &OldCode, const SourceCode &NewCode,
+                    TSTree &EditedTree, uint32_t MaxLineDiff = 2000);
 
 } // namespace diffink
 

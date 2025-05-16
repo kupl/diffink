@@ -73,9 +73,6 @@ public:
 
   static EditScript runDiff(Matcher *Mat, const MerkleTree &Old,
                             const MerkleTree &New);
-
-  static EditScript runDiffInk(Matcher *Mat, const MerkleTree &Old,
-                               const MerkleTree &New);
 };
 
 } // namespace diffink

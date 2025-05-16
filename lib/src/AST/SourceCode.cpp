@@ -2,11 +2,8 @@
 
 namespace diffink {
 
-SourceCode::SourceCode(std::string &&Content) : Content(std::move(Content)) {
-  setByteMap();
-}
-
-SourceCode::SourceCode(std::string &Content) : Content(Content) {
+SourceCode::SourceCode(std::string &&Content)
+    : Content(std::move(Content)), Lines{0} {
   setByteMap();
 }
 
@@ -22,12 +19,8 @@ void SourceCode::setByteMap() {
   constexpr unsigned char FourByteMask{0b11111000};
   constexpr unsigned char FourByteExpected{0b11110000};
 
-  ByteToPos.clear();
-  decltype(ByteToPos)().swap(ByteToPos);
   ByteToPos.reserve(getSize() + 1);
-  ByteToUTF8Pos.clear();
-  decltype(ByteToUTF8Pos)().swap(ByteToUTF8Pos);
-  ByteToUTF8Pos.reserve(getSize());
+  ByteToUTF8Pos.reserve(getSize() + 1);
 
   uint32_t Row{0}, Col{0};
   uint32_t UTF8Row{0}, UTF8Col{0};
@@ -45,6 +38,7 @@ void SourceCode::setByteMap() {
         ++UTF8Row;
         Col = 0;
         UTF8Col = 0;
+        Lines.push_back(i + 1);
       } else {
         ++UTF8Col;
         ++Col;

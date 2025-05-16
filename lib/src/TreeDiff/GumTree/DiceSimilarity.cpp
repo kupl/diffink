@@ -14,7 +14,7 @@ double computeDiceSimilarity(TreeDiff &Mapping,
     for (auto Node : New)
       if (Old.contains(Mapping.findNewToOldMapping(Node)))
         ++Count;
-  return static_cast<double>(2 * Count) / (Old.size() + New.size());
+  return static_cast<double>(Count + Count) / (Old.size() + New.size());
 }
 
 double computeDiceSimilarity(TreeDiff &Mapping,
@@ -25,7 +25,7 @@ double computeDiceSimilarity(TreeDiff &Mapping,
     if (Node != New && Old.contains(Mapping.findNewToOldMapping(Node)))
       ++Count;
   });
-  return static_cast<double>(2 * Count) /
+  return static_cast<double>(Count + Count) /
          (Old.size() + New->Original.getSize() - 1);
 }
 

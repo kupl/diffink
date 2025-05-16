@@ -72,7 +72,7 @@ HashNode::HashNode(const TSNode &RawNode, std::string &&Type,
 
 void HashNode::makeMetadataRecursively() {
   if (Children.empty()) {
-    ExactHash = xxhVector({getTypeHash(), xxhString(Label)});
+    ExactHash = xxhVector64({getTypeHash(), xxhString64(Label)});
     return;
   }
 
@@ -84,7 +84,7 @@ void HashNode::makeMetadataRecursively() {
     Height = std::max(Height, Child.Height + 1);
     Size += Child.Size;
   }
-  ExactHash = xxhVector({getTypeHash(), xxhVector(ExactHashes)});
+  ExactHash = xxhVector64({getTypeHash(), xxhVector64(ExactHashes)});
 }
 
 void HashNode::makePostOrder(std::vector<const HashNode *> &PostOrder,
@@ -106,7 +106,7 @@ void HashNode::makeStructuralHashRecursively() {
     Child.makeStructuralHashRecursively();
     StructuralHashes.push_back(Child.StructuralHash);
   }
-  StructuralHash = xxhVector({getTypeHash(), xxhVector(StructuralHashes)});
+  StructuralHash = xxhVector64({getTypeHash(), xxhVector64(StructuralHashes)});
 }
 
 std::vector<const HashNode *> HashNode::makePostOrder() const {
@@ -165,15 +165,6 @@ std::unique_ptr<HashNode> HashNode::build(TSNode RootNode,
 
   Root->makeMetadataRecursively();
   return Root;
-}
-
-XXH64_hash_t xxhVector(const std::vector<XXH64_hash_t> &data) noexcept {
-  return XXH64(static_cast<const void *>(data.data()),
-               data.size() * sizeof(XXH64_hash_t), 0);
-}
-
-XXH64_hash_t xxhString(const std::string &data) noexcept {
-  return XXH64(static_cast<const void *>(data.data()), data.size(), 0);
 }
 
 } // namespace diffink

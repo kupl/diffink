@@ -2,18 +2,14 @@
 #define DIFFINK_AST_HASHNODE_H
 
 #include "DiffInk/AST/SourceCode.h"
+#include "DiffInk/Utils/XxhStl.h"
 #include <format>
 #include <list>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
-#include <xxHash/xxh3.h>
 
 namespace diffink {
-
-XXH64_hash_t xxhVector(const std::vector<XXH64_hash_t> &data) noexcept;
-
-XXH64_hash_t xxhString(const std::string &data) noexcept;
 
 class HashNode {
 public:
@@ -80,7 +76,7 @@ public:
 
   uint32_t getSize() const noexcept { return Size; }
 
-  XXH64_hash_t getTypeHash() const noexcept { return xxhString(Type); }
+  XXH64_hash_t getTypeHash() const noexcept { return xxhString64(Type); }
 
   XXH64_hash_t getStructuralHash() const noexcept { return StructuralHash; }
 

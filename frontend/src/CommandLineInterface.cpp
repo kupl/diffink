@@ -1,8 +1,8 @@
 #include "CommandLineInterface.h"
 
 void CommandLineInterface::initArguments() {
-  Program.add_argument("original").help("locates original code file");
-  Program.add_argument("modified").help("locates modified code file");
+  Program.add_argument("original").help("locates original source code file");
+  Program.add_argument("modified").help("locates modified source code file");
 
   std::vector<std::string> Languages;
 #ifdef DIFFINK_LANGUAGE_SUPPORT_C
@@ -51,7 +51,7 @@ void CommandLineInterface::initArguments() {
   Languages.emplace_back("scala");
 #endif
 
-  std::string LangHelp{"specifies language of input codes\n"
+  std::string LangHelp{"specifies language of input source codes\n"
                        "supported languages: "};
   if (Languages.empty())
     LangHelp.append("none\n");
@@ -309,7 +309,7 @@ void CommandLineInterface::exportAsJSON(const ScriptExporter &Exporter) const {
   File << Exporter.exportAsJSON().dump(2);
 }
 
-diffink::ExtendedEditScript CommandLineInterface::runDiffInk() {
+diffink::ExtendedEditScript CommandLineInterface::runDiff() {
   {
     auto Start = std::chrono::steady_clock::now();
     OldTree.parse(Parser->get(), *OldCode);
@@ -319,68 +319,30 @@ diffink::ExtendedEditScript CommandLineInterface::runDiffInk() {
       auto Time =
           std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
               .count();
-      *Logger << std::format("Parsing original code took: {}.{:03} ms",
-                             Time / 1000, Time % 1000)
+      *Logger << std::format("Parse(original) ... {}.{:03} ms", Time / 1000,
+                             Time % 1000)
               << std::endl;
     }
   }
   {
     auto Start = std::chrono::steady_clock::now();
-    NewTree.incparse(Parser->get(), OldTree, *OldCode, *NewCode,
-                     diffink::diffText(*OldCode, *NewCode));
+    if (ApplyDiffink)
+      NewTree.incparse(Parser->get(), OldTree, *OldCode, *NewCode);
+    else
+      NewTree.parse(Parser->get(), *NewCode);
     auto End = std::chrono::steady_clock::now();
 
     if (Logger) {
       auto Time =
           std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
               .count();
-      *Logger << std::format("Parsing modified code took: {}.{:03} ms",
-                             Time / 1000, Time % 1000)
-              << std::endl;
-    }
-  }
-
-  auto Start = std::chrono::steady_clock::now();
-  auto Script = diffink::TreeDiff::runDiffInk(Matcher.get(), OldTree, NewTree);
-  auto End = std::chrono::steady_clock::now();
-
-  if (Logger) {
-    auto Time =
-        std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
-            .count();
-    *Logger << std::format("Differencing took: {}.{:03} ms", Time / 1000,
-                           Time % 1000)
-            << std::flush;
-  }
-  return diffink::simplifyEditScript(Script);
-}
-
-diffink::ExtendedEditScript CommandLineInterface::runRawDiff() {
-  {
-    auto Start = std::chrono::steady_clock::now();
-    OldTree.parse(Parser->get(), *OldCode);
-    auto End = std::chrono::steady_clock::now();
-
-    if (Logger) {
-      auto Time =
-          std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
-              .count();
-      *Logger << std::format("Parsing original code took: {}.{:03} ms",
-                             Time / 1000, Time % 1000)
-              << std::endl;
-    }
-  }
-  {
-    auto Start = std::chrono::steady_clock::now();
-    NewTree.parse(Parser->get(), *NewCode);
-    auto End = std::chrono::steady_clock::now();
-
-    if (Logger) {
-      auto Time =
-          std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
-              .count();
-      *Logger << std::format("Parsing modified code took: {}.{:03} ms",
-                             Time / 1000, Time % 1000)
+      *Logger << std::format(
+                     "{}"
+                     "Parse(modified) ... {}.{:03} ms",
+                     ApplyDiffink && !NewTree.isIncparsed()
+                         ? "==! Incremental parsing is deactivated !==\n"
+                         : "",
+                     Time / 1000, Time % 1000)
               << std::endl;
     }
   }
@@ -393,8 +355,7 @@ diffink::ExtendedEditScript CommandLineInterface::runRawDiff() {
     auto Time =
         std::chrono::duration_cast<std::chrono::microseconds>(End - Start)
             .count();
-    *Logger << std::format("Differencing took: {}.{:03} ms", Time / 1000,
-                           Time % 1000)
+    *Logger << std::format("Diff ... {}.{:03} ms", Time / 1000, Time % 1000)
             << std::flush;
   }
   return diffink::simplifyEditScript(Script);
@@ -402,11 +363,10 @@ diffink::ExtendedEditScript CommandLineInterface::runRawDiff() {
 
 void CommandLineInterface::logMeta() {
   if (Logger)
-    *Logger << std::format("Matcher: {}\n"
-                           "Language: {}\n"
-                           "Original: \"{}\"\n"
-                           "Modified: \"{}\"\n"
-                           "========",
+    *Logger << std::format("* Matcher: {}\n"
+                           "* Language: {}\n"
+                           "* Original: \"{}\"\n"
+                           "* Modified: \"{}\"\n",
                            Program.get<std::string>("--matcher"),
                            Program.get<std::string>("--language"),
                            Program.get<std::string>("original"),
@@ -433,16 +393,10 @@ void CommandLineInterface::run() {
   if (Program.get<bool>("--log"))
     setLogger();
   logMeta();
-
   OldCode = std::make_unique<diffink::SourceCode>(
       read(Program.get<std::string>("original")));
   NewCode = std::make_unique<diffink::SourceCode>(
       read(Program.get<std::string>("modified")));
-
-  if (ApplyDiffink)
-    makeReport(runRawDiff());
-  else
-    makeReport(runDiffInk());
-
+  makeReport(runDiff());
   std::exit(0);
 }

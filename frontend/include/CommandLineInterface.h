@@ -114,9 +114,7 @@ private:
 
   void exportAsJSON(const ScriptExporter &Exporter) const;
 
-  diffink::ExtendedEditScript runDiffInk();
-
-  diffink::ExtendedEditScript runRawDiff();
+  diffink::ExtendedEditScript runDiff();
 
   void logMeta();
 

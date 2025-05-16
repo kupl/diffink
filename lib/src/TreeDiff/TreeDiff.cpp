@@ -143,7 +143,7 @@ void TreeDiff::build(const MerkleTree &OriginalTree, VirtualTree &TreeCopy,
   }
 
   NodeCopy->VirtualHash =
-      xxhVector({OriginalNode.getTypeHash(), xxhVector(Hashes)});
+      xxhVector64({OriginalNode.getTypeHash(), xxhVector64(Hashes)});
 }
 
 EditScript TreeDiff::makeEditScript() {
@@ -309,14 +309,8 @@ void TreeDiff::overrideMapping(VirtualNode *OldNode, VirtualNode *NewNode) {
 EditScript TreeDiff::runDiff(Matcher *Mat, const MerkleTree &Old,
                              const MerkleTree &New) {
   TreeDiff Mapping;
-  Mapping.match(Mat, Old, New);
-  return Mapping.makeEditScript();
-}
-
-EditScript TreeDiff::runDiffInk(Matcher *Mat, const MerkleTree &Old,
-                                const MerkleTree &New) {
-  TreeDiff Mapping;
-  Mapping.matchDiffInk(Mat, Old, New);
+  New.isIncparsed() ? Mapping.matchDiffInk(Mat, Old, New)
+                    : Mapping.match(Mat, Old, New);
   return Mapping.makeEditScript();
 }
 
