@@ -97,13 +97,13 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
 )"};
 
   constexpr std::string_view InsertAction{
-      R"(<span style="background-color:rgb(159, 255, 159);">)"};
+      R"(<span style="background-color:rgb(191, 255, 191);">)"};
   constexpr std::string_view DeleteAction{
-      R"(<span style="background-color:rgb(255, 159, 159);">)"};
+      R"(<span style="background-color:rgb(255, 191, 191);">)"};
   constexpr std::string_view UpdateAction{
-      R"(<span style="background-color:rgb(255, 255, 127);">)"};
+      R"(<span style="background-color:rgb(255, 255, 159);">)"};
   constexpr std::string_view MoveAction{
-      R"(<span style="background-color:rgb(255, 127, 255);">)"};
+      R"(<span style="background-color:rgb(255, 159, 255);">)"};
   constexpr std::string_view ActionEnd{"</span>"};
 
   constexpr std::string_view AmpChar{"&amp;"};
@@ -114,12 +114,10 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
 
   std::vector<std::vector<const std::string_view *>> OldOpenTags(
       OldSrc.getSize() + 1, std::vector<const std::string_view *>()),
-      OldCloseTags(OldSrc.getSize() + 1,
-                   std::vector<const std::string_view *>()),
       NewOpenTags(NewSrc.getSize() + 1,
-                  std::vector<const std::string_view *>()),
-      NewCloseTags(NewSrc.getSize() + 1,
-                   std::vector<const std::string_view *>());
+                  std::vector<const std::string_view *>());
+  std::vector<std::size_t> OldCloseTags(OldSrc.getSize() + 1, 0),
+      NewCloseTags(NewSrc.getSize() + 1, 0);
 
   for (const auto &Action : Script) {
     std::visit(
@@ -128,57 +126,51 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
           if constexpr (std::is_same_v<T, diffink::edit_action::InsertNode>) {
             NewOpenTags[Action.Leaf.getByteRange().first].push_back(
                 &InsertAction);
-            NewCloseTags[Action.Leaf.getByteRange().second].push_back(
-                &ActionEnd);
+            ++NewCloseTags[Action.Leaf.getByteRange().second];
           }
 
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::DeleteNode>) {
             OldOpenTags[Action.Leaf.getByteRange().first].push_back(
                 &DeleteAction);
-            OldCloseTags[Action.Leaf.getByteRange().second].push_back(
-                &ActionEnd);
+            ++OldCloseTags[Action.Leaf.getByteRange().second];
           }
 
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::UpdateNode>) {
             OldOpenTags[Action.Leaf.getByteRange().first].push_back(
                 &UpdateAction);
-            OldCloseTags[Action.Leaf.getByteRange().second].push_back(
-                &ActionEnd);
+            ++OldCloseTags[Action.Leaf.getByteRange().second];
             NewOpenTags[Action.UpdatedLeaf.getByteRange().first].push_back(
                 &UpdateAction);
-            NewCloseTags[Action.UpdatedLeaf.getByteRange().second].push_back(
-                &ActionEnd);
+            ++NewCloseTags[Action.UpdatedLeaf.getByteRange().second];
           }
 
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::MoveTree>) {
-            OldOpenTags[Action.Subtree.getByteRange().first].push_back(
-                &MoveAction);
-            OldCloseTags[Action.Subtree.getByteRange().second].push_back(
-                &ActionEnd);
-            NewOpenTags[Action.MovedSubtree.getByteRange().first].push_back(
-                &MoveAction);
-            NewCloseTags[Action.MovedSubtree.getByteRange().second].push_back(
-                &ActionEnd);
+            for (const auto &Node : Action.Subtree.makePostOrder()) {
+              OldOpenTags[Node->getByteRange().first].push_back(&MoveAction);
+              ++OldCloseTags[Node->getByteRange().second];
+            }
+            for (const auto &Node : Action.MovedSubtree.makePostOrder()) {
+              NewOpenTags[Node->getByteRange().first].push_back(&MoveAction);
+              ++NewCloseTags[Node->getByteRange().second];
+            }
           }
 
           else if constexpr (std::is_same_v<T,
-                                            diffink::edit_action::InsertTree>) {
-            NewOpenTags[Action.Subtree.getByteRange().first].push_back(
-                &InsertAction);
-            NewCloseTags[Action.Subtree.getByteRange().second].push_back(
-                &ActionEnd);
-          }
+                                            diffink::edit_action::InsertTree>)
+            for (const auto &Node : Action.Subtree.makePostOrder()) {
+              NewOpenTags[Node->getByteRange().first].push_back(&InsertAction);
+              ++NewCloseTags[Node->getByteRange().second];
+            }
 
           else if constexpr (std::is_same_v<T,
-                                            diffink::edit_action::DeleteTree>) {
-            OldOpenTags[Action.Subtree.getByteRange().first].push_back(
-                &DeleteAction);
-            OldCloseTags[Action.Subtree.getByteRange().second].push_back(
-                &ActionEnd);
-          }
+                                            diffink::edit_action::DeleteTree>)
+            for (const auto &Node : Action.Subtree.makePostOrder()) {
+              OldOpenTags[Node->getByteRange().first].push_back(&DeleteAction);
+              ++OldCloseTags[Node->getByteRange().second];
+            }
         },
         Action);
   }
@@ -187,8 +179,7 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
                            uint32_t DigitCount) -> std::string {
     auto Line = std::to_string(LineNum++);
     return R"(<span style="background-color:rgb(223, 223, 223);">)" +
-           std::string(DigitCount - Line.size(), ' ') + Line +
-           R"( |</span><span style="background-color:rgb(255, 255, 255);"> </span>)";
+           std::string(DigitCount - Line.size(), ' ') + Line + R"( |</span> )";
   };
 
   const uint32_t OldLineEnd{OldSrc.getLOC() + 1};
@@ -199,8 +190,8 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
   auto OldCStr = OldSrc.getContent();
 
   for (std::size_t i{0}; i != OldSrc.getSize(); ++i) {
-    for (auto Tag : OldCloseTags[i])
-      OldBuf.append(*Tag);
+    for (std::size_t j{0}; j != OldCloseTags[i]; ++j)
+      OldBuf.append(ActionEnd);
     for (auto Tag : OldOpenTags[i])
       OldBuf.append(*Tag);
 
@@ -228,8 +219,8 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
       OldBuf.push_back(OldCStr[i]);
     }
   }
-  for (auto Tag : OldCloseTags[OldSrc.getSize()])
-    OldBuf.append(*Tag);
+  for (std::size_t j{0}; j != OldCloseTags[OldSrc.getSize()]; ++j)
+    OldBuf.append(ActionEnd);
 
   const uint32_t NewLineEnd{NewSrc.getLOC() + 1};
   const uint32_t NewDigitCount = std::to_string(NewLineEnd).size();
@@ -239,9 +230,9 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
   auto NewCStr = NewSrc.getContent();
 
   for (std::size_t i{0}; i != NewSrc.getSize(); ++i) {
+    for (std::size_t j{0}; j != NewCloseTags[i]; ++j)
+      NewBuf.append(ActionEnd);
     for (auto Tag : NewOpenTags[i])
-      NewBuf.append(*Tag);
-    for (auto Tag : NewCloseTags[i])
       NewBuf.append(*Tag);
 
     switch (NewCStr[i]) {
@@ -268,8 +259,8 @@ ScriptExporter::exportAsHTML(const diffink::SourceCode &OldSrc,
       NewBuf.push_back(NewCStr[i]);
     }
   }
-  for (auto Tag : NewCloseTags[NewSrc.getSize()])
-    NewBuf.append(*Tag);
+  for (std::size_t j{0}; j != NewCloseTags[NewSrc.getSize()]; ++j)
+    NewBuf.append(ActionEnd);
 
   OldBuf.append(EndTemplate);
   NewBuf.append(EndTemplate);
@@ -287,7 +278,7 @@ nlohmann::ordered_json ScriptExporter::exportAsJSON() const {
             Buffer.push_back(json{{"action", "insert-node"},
                                   {"insert", Action.Leaf.toString()},
                                   {"to", Action.Parent.toString()},
-                                  {"at", Action.Index}});
+                                  {"at", Action.Index + 1}});
 
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::DeleteNode>)
@@ -298,7 +289,7 @@ nlohmann::ordered_json ScriptExporter::exportAsJSON() const {
             Buffer.push_back(json{{"action", "move-tree"},
                                   {"move", Action.Subtree.toString()},
                                   {"to", Action.Parent.toString()},
-                                  {"at", Action.Index},
+                                  {"at", Action.Index + 1},
                                   {"moved", Action.MovedSubtree.toString()}});
 
           else if constexpr (std::is_same_v<T,
@@ -312,7 +303,7 @@ nlohmann::ordered_json ScriptExporter::exportAsJSON() const {
             Buffer.push_back(json{{"action", "insert-tree"},
                                   {"insert", Action.Subtree.toString()},
                                   {"to", Action.Parent.toString()},
-                                  {"at", Action.Index}});
+                                  {"at", Action.Index + 1}});
 
           else if constexpr (std::is_same_v<T,
                                             diffink::edit_action::DeleteTree>)

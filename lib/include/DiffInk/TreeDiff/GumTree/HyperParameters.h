@@ -1,8 +1,7 @@
 #ifndef DIFFINK_TREEDIFF_GUMTREE_HYPERPARAMETERS_H
 #define DIFFINK_TREEDIFF_GUMTREE_HYPERPARAMETERS_H
 
-#include <cstddef>
-#include <limits>
+#include <cstdint>
 
 namespace diffink::gumtree {
 

@@ -5,6 +5,8 @@ namespace diffink {
 NodeComp compareNodes(const TSNode &LeftNode, const TSNode &RightNode) {
   auto LeftStart = ts_node_start_byte(LeftNode);
   auto LeftEnd = ts_node_end_byte(LeftNode);
+  // if (LeftStart == LeftEnd)
+  //   return NodeComp::Precedes;
   auto RightStart = ts_node_start_byte(RightNode);
   auto RightEnd = ts_node_end_byte(RightNode);
 

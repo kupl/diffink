@@ -22,11 +22,11 @@ public:
     std::string toString() const;
   };
 
-  // struct BuildConfig {
-  //   std::unordered_set<std::string> Flattened;
-  //   std::unordered_set<std::string> Aliased;
-  //   std::unordered_set<std::string> Ignored;
-  // };
+  struct BuildConfig {
+    std::unordered_set<std::string> Flattened;
+    std::unordered_set<std::string> Aliased;
+    std::unordered_set<std::string> Ignored;
+  };
 
 private:
   const std::string Type;
@@ -71,6 +71,10 @@ public:
   const decltype(Children) &getChildren() const noexcept { return Children; }
 
   const decltype(ByteRange) &getByteRange() const noexcept { return ByteRange; }
+
+  const decltype(PosRange) &getUTF8PosRange() const noexcept {
+    return PosRange;
+  }
 
   uint32_t getHeight() const noexcept { return Height; }
 

@@ -17,8 +17,8 @@ double computeChawatheSimilarity(TreeDiff &Mapping,
 
 double computeAutoChawatheThreshold(VirtualNode *Old,
                                     VirtualNode *New) noexcept {
-  return 1.0 / (1.0 + std::log(Old->Original.getSize() +
-                               New->Original.getSize() - 2));
+  return 1.0 / (1.0 + std::log2(Old->Original.getSize() +
+                                New->Original.getSize() - 2));
 }
 
 } // namespace diffink::metric

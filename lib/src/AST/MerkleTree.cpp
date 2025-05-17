@@ -36,8 +36,18 @@ void MerkleTree::identifyChange(MerkleTree &OldTree, Iterator Iters) {
         break;
       }
 
-      switch (compareNodes(ts_tree_cursor_current_node(&Iters.OldCursor),
-                           ts_tree_cursor_current_node(&Iters.NewCursor))) {
+      auto OldRawNode = ts_tree_cursor_current_node(&Iters.OldCursor);
+      while (ts_node_is_missing(OldRawNode)) {
+        ts_tree_cursor_goto_next_sibling(&Iters.OldCursor);
+        OldRawNode = ts_tree_cursor_current_node(&Iters.OldCursor);
+      }
+      auto NewRawNode = ts_tree_cursor_current_node(&Iters.NewCursor);
+      while (ts_node_is_missing(NewRawNode)) {
+        ts_tree_cursor_goto_next_sibling(&Iters.NewCursor);
+        NewRawNode = ts_tree_cursor_current_node(&Iters.NewCursor);
+      }
+
+      switch (compareNodes(OldRawNode, NewRawNode)) {
       case NodeComp::Equal:
         if (OldHashChild->getType() == NewHashChild->getType()) {
           Mapping.emplace_back(&*OldHashChild, &*NewHashChild);
