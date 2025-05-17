@@ -2,14 +2,13 @@
 #define DIFFINK_TREEDIFF_GUMTREE_HYPERPARAMETERS_H
 
 #include <cstddef>
+#include <limits>
 
 namespace diffink::gumtree {
 
 constexpr uint32_t DefaultMinHeight{1};
 
 constexpr double DefaultMinDice{0.5};
-
-constexpr double DefaultSimpleDice{-1.0};
 
 constexpr uint32_t DefaultMaxSize{1000};
 

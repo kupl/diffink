@@ -33,8 +33,8 @@ double Comparator::computeSiblingSimilarity(NodePair Pair) {
   if (Iter != SiblingSimilarityCache.cend())
     return Iter->second;
 
-  auto Dice = computeDiceSimilarity(Mapping, makeSiblings(ParentPair.first),
-                                    ParentPair.second);
+  auto Dice = metric::computeDiceSimilarity(
+      Mapping, makeSiblings(ParentPair.first), ParentPair.second);
   SiblingSimilarityCache.emplace(ParentPair, Dice);
   return Dice;
 }
@@ -51,7 +51,8 @@ double Comparator::computeAncestorSimilarity(NodePair Pair) {
   auto &OldAncestors = makeAncestors(ParentPair.first);
   auto &NewAncestors = makeAncestors(ParentPair.second);
 
-  auto Dice = computeDiceSimilarity(Mapping, OldAncestors, NewAncestors);
+  auto Dice =
+      metric::computeDiceSimilarity(Mapping, OldAncestors, NewAncestors);
   AncestorSimilarityCache.emplace(ParentPair, Dice);
   return Dice;
 }

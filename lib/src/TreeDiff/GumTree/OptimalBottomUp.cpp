@@ -1,8 +1,8 @@
-#include "DiffInk/TreeDiff/GumTree/GreedyBottomUp.h"
+#include "DiffInk/TreeDiff/GumTree/OptimalBottomUp.h"
 
 namespace diffink::gumtree {
 
-void GreedyBottomUp::match(TreeDiff &Mapping, VirtualNode *Node) {
+void OptimalBottomUp::match(TreeDiff &Mapping, VirtualNode *Node) {
   if (Node->Original.isLeaf() || Mapping.findOldToNewMapping(Node))
     return;
 
@@ -35,8 +35,9 @@ void GreedyBottomUp::match(TreeDiff &Mapping, VirtualNode *Node) {
   double Max{-1.0};
 
   for (auto Candidate : Candidates) {
-    auto Similarity = computeDiceSimilarity(Mapping, Desendants, Candidate);
-    if (Similarity > Max && Similarity > MinDice) {
+    auto Similarity =
+        metric::computeDiceSimilarity(Mapping, Desendants, Candidate);
+    if (Similarity > Max && Similarity >= MinDice) {
       Max = Similarity;
       Best = Candidate;
     }
@@ -44,14 +45,13 @@ void GreedyBottomUp::match(TreeDiff &Mapping, VirtualNode *Node) {
 
   if (Best) {
     Mapping.insertMapping(Node, Best);
-    if (Heuristic)
-      match(Mapping, Node, Best);
+    Recovery.match(Mapping, Node, Best);
   }
 }
 
-void GreedyBottomUp::match(TreeDiff &Mapping,
-                           const std::vector<VirtualNode *> &Old,
-                           const std::vector<VirtualNode *> &) {
+void OptimalBottomUp::match(TreeDiff &Mapping,
+                            const std::vector<VirtualNode *> &Old,
+                            const std::vector<VirtualNode *> &) {
   for (auto Subtree : Old) {
     if (Subtree != Mapping.getOldRoot())
       Subtree->traversePostOrder(Subtree, [this, &Mapping](VirtualNode *Node) {
@@ -59,8 +59,7 @@ void GreedyBottomUp::match(TreeDiff &Mapping,
       });
     else {
       Mapping.insertMapping(Subtree, Mapping.getNewRoot());
-      if (Heuristic)
-        Heuristic->match(Mapping, Subtree, Mapping.getNewRoot());
+      Recovery.match(Mapping, Subtree, Mapping.getNewRoot());
     }
   }
 }

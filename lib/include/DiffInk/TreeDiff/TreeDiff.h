@@ -18,6 +18,13 @@ public:
                        const std::vector<VirtualNode *> &New) = 0;
   };
 
+  class Recovery {
+  public:
+    virtual ~Recovery() = default;
+    virtual void match(TreeDiff &Mapping, VirtualNode *Old,
+                       VirtualNode *New) = 0;
+  };
+
 private:
   static constexpr XXH64_hash_t UncommonSymbolHash{0};
 

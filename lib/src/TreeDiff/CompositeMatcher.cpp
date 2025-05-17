@@ -9,26 +9,25 @@ void CompositeMatcher::match(TreeDiff &Mapping,
     Matcher->match(Mapping, Old, New);
 }
 
-std::unique_ptr<TreeDiff::Matcher> makeGumtreeOptimal(std::size_t MaxSize,
-                                                      std::size_t MinHeight,
-                                                      double TopDownMinDice,
-                                                      double BottomUpMinDice) {
+std::unique_ptr<TreeDiff::Matcher>
+makeGumtreeOptimal(std::size_t MaxSize, std::size_t MinHeight,
+                   double TopDownThreshold, double BottomUpThreshold) {
   auto Matcher = std::make_unique<CompositeMatcher>();
   Matcher->addMatcher(
-      std::make_unique<gumtree::GreedyTopDown>(MinHeight, TopDownMinDice));
-  Matcher->addMatcher(std::make_unique<gumtree::GreedyBottomUp>(
-      std::make_unique<gumtree::OptimalRecovery>(MaxSize), BottomUpMinDice));
+      std::make_unique<gumtree::GreedyTopDown>(MinHeight, TopDownThreshold));
+  Matcher->addMatcher(
+      std::make_unique<gumtree::OptimalBottomUp>(MaxSize, BottomUpThreshold));
   return Matcher;
 }
 
-std::unique_ptr<TreeDiff::Matcher> makeGumtreeSimple(std::size_t MinHeight,
-                                                     double TopDownMinDice,
-                                                     double BottomUpMinDice) {
+std::unique_ptr<TreeDiff::Matcher>
+makeGumtreeSimple(std::size_t MinHeight, double TopDownThreshold,
+                  std::optional<double> BottomUpThreshold) {
   auto Matcher = std::make_unique<CompositeMatcher>();
   Matcher->addMatcher(
-      std::make_unique<gumtree::GreedyTopDown>(MinHeight, TopDownMinDice));
-  Matcher->addMatcher(std::make_unique<gumtree::GreedyBottomUp>(
-      std::make_unique<gumtree::SimpleRecovery>(), BottomUpMinDice));
+      std::make_unique<gumtree::GreedyTopDown>(MinHeight, TopDownThreshold));
+  Matcher->addMatcher(
+      std::make_unique<gumtree::SimpleBottomUp>(BottomUpThreshold));
   return Matcher;
 }
 

@@ -124,9 +124,9 @@ void CommandLineInterface::setDiffinkDirectory() {
 #elif defined(FRONTEND_PLATFORM_MACOS)
 void CommandLineInterface::setDiffinkDirectory() {
   if (uint32_t Size{0}; _NSGetExecutablePath(nullptr, &Size) == -1) {
-    std::string<char> buffer(Size);
+    std::string buffer(Size, '\0');
     if (_NSGetExecutablePath(buffer.data(), &Size) == 0)
-      DiffinkDirectory = fs::path(buffer.data())
+      DiffinkDirectory = std::filesystem::path(buffer.data())
                              .parent_path()
                              .parent_path()
                              .parent_path()

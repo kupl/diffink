@@ -1,7 +1,7 @@
 #ifndef DIFFINK_TREEDIFF_GUMTREE_COMPARATOR_H
 #define DIFFINK_TREEDIFF_GUMTREE_COMPARATOR_H
 
-#include "DiffInk/TreeDiff/GumTree/DiceSimilarity.h"
+#include "DiffInk/TreeDiff/Metric/DiceSimilarity.h"
 
 namespace diffink::gumtree {
 

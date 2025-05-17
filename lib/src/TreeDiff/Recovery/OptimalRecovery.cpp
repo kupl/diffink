@@ -1,6 +1,6 @@
-#include "DiffInk/TreeDiff/GumTree/Recovery/OptimalRecovery.h"
+#include "DiffInk/TreeDiff/Recovery/OptimalRecovery.h"
 
-namespace diffink::gumtree {
+namespace diffink::recovery {
 
 int OptimalRecovery::computeUpdateCost(VirtualNode *Left,
                                        VirtualNode *Right) const {
@@ -140,4 +140,4 @@ void OptimalRecovery::match(TreeDiff &Mapping, VirtualNode *Old,
   }
 }
 
-} // namespace diffink::gumtree
+} // namespace diffink::recovery

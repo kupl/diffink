@@ -2,19 +2,22 @@
 #define DIFFINK_TREEDIFF_GUMTREE_SIMPLEBOTTOMUP_H
 
 #include "DiffInk/TreeDiff/GumTree/HyperParameters.h"
-#include "DiffInk/TreeDiff/GumTree/Recovery/SimpleRecovery.h"
+#include "DiffInk/TreeDiff/Metric/ChawatheSimilarity.h"
+#include "DiffInk/TreeDiff/Recovery/SimpleRecovery.h"
 
 namespace diffink::gumtree {
 
 class SimpleBottomUp : public TreeDiff::Matcher {
 private:
-  const double MinDice;
+  recovery::SimpleRecovery Recovery;
+  const std::optional<double> Threshold;
 
 private:
   void match(TreeDiff &Mapping, VirtualNode *Node);
 
 public:
-  SimpleBottomUp(double MinDice = DefaultMinDice) noexcept : MinDice{MinDice} {}
+  SimpleBottomUp(std::optional<double> Threshold = std::nullopt) noexcept
+      : Threshold{Threshold} {}
 
   ~SimpleBottomUp() final = default;
 

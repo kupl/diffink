@@ -1,9 +1,9 @@
-#ifndef DIFFINK_TREEDIFF_DICESIMILARITY_H
-#define DIFFINK_TREEDIFF_DICESIMILARITY_H
+#ifndef DIFFINK_TREEDIFF_METRIC_DICESIMILARITY_H
+#define DIFFINK_TREEDIFF_METRIC_DICESIMILARITY_H
 
 #include "DiffInk/TreeDiff/TreeDiff.h"
 
-namespace diffink::gumtree {
+namespace diffink::metric {
 
 double computeDiceSimilarity(TreeDiff &Mapping,
                              const std::unordered_set<VirtualNode *> &Old,
@@ -13,6 +13,6 @@ double computeDiceSimilarity(TreeDiff &Mapping,
                              const std::unordered_set<VirtualNode *> &Old,
                              VirtualNode *New);
 
-} // namespace diffink::gumtree
+} // namespace diffink::metric
 
-#endif // DIFFINK_TREEDIFF_DICESIMILARITY_H
+#endif // DIFFINK_TREEDIFF_METRIC_DICESIMILARITY_H

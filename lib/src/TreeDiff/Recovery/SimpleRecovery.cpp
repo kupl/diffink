@@ -1,10 +1,10 @@
-#include "DiffInk/TreeDiff/GumTree/Recovery/SimpleRecovery.h"
+#include "DiffInk/TreeDiff/Recovery/SimpleRecovery.h"
 
-namespace diffink::gumtree {
+namespace diffink::recovery {
 
 template <class Comparator>
 void SimpleRecovery::matchLcs(TreeDiff &Mapping, VirtualNode *Old,
-                              VirtualNode *New, Comparator &&Comp) const {
+                              VirtualNode *New, Comparator &&Equal) const {
   std::vector<VirtualNode *> UnmappedOldChildren, UnmappedNewChildren;
   for (auto Child : Old->Children)
     if (!Mapping.findOldToNewMapping(Child))
@@ -21,21 +21,21 @@ void SimpleRecovery::matchLcs(TreeDiff &Mapping, VirtualNode *Old,
 
   for (std::size_t i{1}; i != N + 1; ++i)
     for (std::size_t j{1}; j != M + 1; ++j)
-      LcsTable[i][j] = Comp(UnmappedOldChildren[i - 1]->Original,
-                            UnmappedNewChildren[j - 1]->Original)
+      LcsTable[i][j] = Equal(UnmappedOldChildren[i - 1]->Original,
+                             UnmappedNewChildren[j - 1]->Original)
                            ? LcsTable[i - 1][j - 1] + 1
                            : std::max(LcsTable[i - 1][j], LcsTable[i][j - 1]);
 
   for (std::size_t i = N, j = M; i != 0 && j != 0;) {
     if (LcsTable[i][j] == LcsTable[i - 1][j - 1] + 1 &&
-        Comp(UnmappedOldChildren[i - 1]->Original,
-             UnmappedNewChildren[j - 1]->Original)) {
+        Equal(UnmappedOldChildren[i - 1]->Original,
+              UnmappedNewChildren[j - 1]->Original)) {
       --i;
       --j;
       VirtualNode::traversePostOrder(
           UnmappedOldChildren[i], UnmappedNewChildren[j],
           [&Mapping](VirtualNode *Old, VirtualNode *New) {
-            Mapping.insertMapping(Old, New);
+            Mapping.overrideMapping(Old, New);
           });
       continue;
     }
@@ -87,4 +87,4 @@ void SimpleRecovery::match(TreeDiff &Mapping, VirtualNode *Old,
   matchUnique(Mapping, Old, New);
 }
 
-} // namespace diffink::gumtree
+} // namespace diffink::recovery
